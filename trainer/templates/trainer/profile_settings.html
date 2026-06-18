@@ -1,0 +1,268 @@
+{% extends 'trainer/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+  .profile-page { max-width: 680px; margin: 2rem auto; }
+
+  .profile-hero {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+    border-radius: 20px;
+    padding: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    color: #fff;
+  }
+  .avatar-wrap { position: relative; flex-shrink: 0; }
+  .avatar-img {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid rgba(255,255,255,.4);
+  }
+  .avatar-placeholder {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    background: rgba(255,255,255,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.5rem;
+    border: 3px solid rgba(255,255,255,.4);
+  }
+  .avatar-edit-btn {
+    position: absolute; bottom: 2px; right: 2px;
+    width: 28px; height: 28px;
+    background: #fff; color: #2563eb;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .8rem; cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+  }
+  .hero-info h2 { margin: 0 0 .25rem; font-size: 1.5rem; }
+  .hero-info p  { margin: 0; opacity: .8; font-size: .9rem; }
+
+  .stats-row {
+    display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem;
+  }
+  .stat-card {
+    flex: 1; min-width: 120px;
+    background: #fff;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    border: 1px solid #e2e8f0;
+  }
+  .stat-card .num { font-size: 1.8rem; font-weight: 700; color: #2563eb; }
+  .stat-card .lbl { font-size: .75rem; color: #64748b; margin-top: .25rem; }
+
+  .settings-card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+  }
+  .settings-card h3 {
+    margin: 0 0 1rem;
+    font-size: 1rem;
+    color: #1e3a5f;
+    border-bottom: 2px solid #eff6ff;
+    padding-bottom: .5rem;
+  }
+
+  .form-group { margin-bottom: 1rem; }
+  .form-group label {
+    display: block;
+    font-size: .85rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: .35rem;
+  }
+  .form-group input[type="text"],
+  .form-group select {
+    width: 100%;
+    padding: .6rem .9rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: .95rem;
+    outline: none;
+    transition: border-color .2s;
+    box-sizing: border-box;
+  }
+  .form-group input:focus,
+  .form-group select:focus { border-color: #2563eb; }
+
+  .avatar-upload-area {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .avatar-upload-area:hover { border-color: #2563eb; }
+  .avatar-upload-area input { display: none; }
+  .avatar-preview { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: .5rem auto; display: block; }
+
+  .save-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #fff;
+    border: none;
+    padding: .75rem 2rem;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: opacity .2s;
+  }
+  .save-btn:hover { opacity: .9; }
+
+  .account-section { display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+  .gmail-badge {
+    display: flex; align-items: center; gap: .5rem;
+    background: #fef3f2; border: 1px solid #fca5a5;
+    border-radius: 8px; padding: .4rem .8rem;
+    font-size: .85rem; color: #dc2626;
+  }
+  .logout-btn {
+    background: #fff; color: #374151;
+    border: 2px solid #e2e8f0;
+    padding: .45rem 1rem;
+    border-radius: 10px;
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+  }
+  .logout-btn:hover { border-color: #94a3b8; }
+
+  .msg-success {
+    background: #f0fdf4; border: 1px solid #bbf7d0;
+    color: #15803d; border-radius: 10px;
+    padding: .75rem 1rem; margin-bottom: 1rem;
+    font-size: .9rem;
+  }
+</style>
+
+<div class="profile-page">
+
+  {% if messages %}
+    {% for msg in messages %}
+      <div class="msg-success">{{ msg }}</div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Hero -->
+  <div class="profile-hero">
+    <div class="avatar-wrap">
+      {% if profile.get_avatar_url %}
+        <img src="{{ profile.get_avatar_url }}" class="avatar-img" id="heroAvatar" alt="Avatar">
+      {% else %}
+        <div class="avatar-placeholder" id="heroAvatar">🦊</div>
+      {% endif %}
+    </div>
+    <div class="hero-info">
+      <h2>{{ profile.get_display_name }}</h2>
+      <p>{{ request.user.email }}</p>
+      <p>Grade {{ profile.grade_level }} · {{ profile.accuracy }}% accuracy</p>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num">⭐ {{ profile.total_stars }}</div>
+      <div class="lbl">Stars Earned</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ profile.total_correct }}</div>
+      <div class="lbl">Correct Answers</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ profile.total_questions }}</div>
+      <div class="lbl">Questions Done</div>
+    </div>
+    <div class="stat-card">
+      <div class="num">{{ profile.accuracy }}%</div>
+      <div class="lbl">Accuracy</div>
+    </div>
+  </div>
+
+  <!-- Edit Profile -->
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+
+    <div class="settings-card">
+      <h3>Profile</h3>
+
+      <!-- Avatar upload -->
+      <div class="form-group">
+        <label>Profile Picture</label>
+        <div class="avatar-upload-area" onclick="document.getElementById('avatarInput').click()">
+          {% if profile.get_avatar_url %}
+            <img src="{{ profile.get_avatar_url }}" class="avatar-preview" id="avatarPreview">
+          {% else %}
+            <div style="font-size:2rem;margin:.5rem 0">📷</div>
+          {% endif %}
+          <p style="margin:0;font-size:.8rem;color:#64748b">Click to upload a photo</p>
+          <input type="file" id="avatarInput" name="avatar" accept="image/*" onchange="previewAvatar(event)">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Display Name</label>
+        <input type="text" name="display_name" value="{{ profile.display_name }}" placeholder="e.g. Math Star">
+      </div>
+
+      <div class="form-group">
+        <label>Grade Level</label>
+        <select name="grade_level">
+          {% for i in "12345678" %}
+            <option value="{{ i }}" {% if profile.grade_level == i|add:0 %}selected{% endif %}>Grade {{ i }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="save-btn">Save Changes</button>
+    </div>
+  </form>
+
+  <!-- Account Info -->
+  <div class="settings-card">
+    <h3>Account</h3>
+    <div class="account-section">
+      <div class="gmail-badge">
+        <svg width="16" height="16" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 5.1c5.2 0 8.7 2.2 10.7 4.1l7.9-7.7C38.2 1.1 31.7-1 24-1 14.7-1 6.7 4.3 2.8 12.1l9.2 7.2C14.1 11.4 18.5 5.1 24 5.1z"/><path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.4c-.5 2.8-2.1 5.2-4.6 6.8l7.3 5.7c4.3-3.9 6.8-9.7 6.8-16.5z"/><path fill="#FBBC05" d="M12 28.7c-.6-1.8-.9-3.7-.9-5.7s.3-3.9.9-5.7L2.8 12C1 15.4 0 19.1 0 23s1 7.6 2.8 11l9.2-5.3z"/><path fill="#34A853" d="M24 47c6.5 0 12-2.1 16-5.8l-7.3-5.7c-2.1 1.5-4.7 2.3-8.7 2.3-5.5 0-10.1-3.7-11.7-8.7L3 34.7C6.9 42.7 14.8 47 24 47z"/></svg>
+        Signed in with Google
+      </div>
+      <a href="{% url 'account_logout' %}" class="logout-btn">Sign Out</a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function previewAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const hero = document.getElementById('heroAvatar');
+  // replace hero element with img
+  const img = document.createElement('img');
+  img.src = url; img.className = 'avatar-img'; img.id = 'heroAvatar';
+  hero.replaceWith(img);
+  // show preview in upload area
+  let prev = document.getElementById('avatarPreview');
+  if (prev) { prev.src = url; }
+  else {
+    prev = document.createElement('img');
+    prev.src = url; prev.className = 'avatar-preview'; prev.id = 'avatarPreview';
+    e.target.parentElement.prepend(prev);
+  }
+}
+</script>
+{% endblock %}

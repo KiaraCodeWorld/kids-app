@@ -1,0 +1,525 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<div class="fc-wrapper">
+
+    <div class="fc-header">
+        <div class="fc-header-left">
+            <h2>🃏 My Flashcards</h2>
+            <span class="fc-count-pill" id="countPill">{{ total }} cards</span>
+        </div>
+        <div class="fc-filters">
+            <button class="filter-btn active" data-filter="all">All</button>
+            <button class="filter-btn" data-filter="word">📚 Words</button>
+            <button class="filter-btn" data-filter="idiom">🏝️ Idioms</button>
+        </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="fc-progress-bar">
+        <div class="fc-progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <p class="fc-progress-label">Card <span id="cardNum">0</span> of <span id="cardTotal">0</span></p>
+
+    <!-- Flip Card -->
+    <div class="flip-card" id="flipCard">
+        <div class="flip-card-inner" id="flipInner">
+
+            <!-- FRONT -->
+            <div class="flip-card-front">
+                <div class="fc-type-badge" id="typeBadge">WORD</div>
+                <div class="fc-emoji" id="cardEmoji">✨</div>
+                <h3 class="fc-front-text" id="frontText">word</h3>
+                <button class="flip-btn">Tap to reveal →</button>
+            </div>
+
+            <!-- BACK -->
+            <div class="flip-card-back">
+                <div class="fc-type-badge back-badge" id="typeBadgeBack">WORD</div>
+                <h3 class="fc-back-title" id="backTitle">word</h3>
+                <p class="fc-back-text" id="backText">definition</p>
+                <div class="fc-example-box" id="exampleBox">
+                    <span class="eg-label">📖 Example:</span>
+                    <em id="exampleText">example sentence</em>
+                </div>
+                <div class="fc-back-actions">
+                    <button class="pronounce-btn" id="pronounceBtn">🔊 Hear it</button>
+                    <button class="remove-btn" id="removeBtn">🗑 Remove</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="fc-nav">
+        <button class="button secondary" id="prevBtn" disabled>← Prev</button>
+        <button class="button" id="nextBtn">Next →</button>
+    </div>
+
+    <!-- Done screen -->
+    <div class="fc-done" id="fcDone" style="display:none">
+        <div class="done-emoji">🎉</div>
+        <h3>Session complete!</h3>
+        <p id="doneMsg">You reviewed all your flashcards.</p>
+        <div class="done-actions">
+            <button class="button" id="restartBtn">🔄 Review Again</button>
+            <a href="{% url 'trainer:word_explorer_home' %}" class="button secondary">📚 Word Explorer</a>
+            <a href="{% url 'trainer:idiom_island' %}" class="button secondary">🏝️ Idiom Island</a>
+        </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="fc-empty" id="fcEmpty" style="display:none">
+        <div class="empty-emoji">🔖</div>
+        <h3>No flashcards yet</h3>
+        <p>Save words from Word Explorer or idioms from Idiom Island to build your deck.</p>
+        <div class="done-actions">
+            <a href="{% url 'trainer:word_explorer_home' %}" class="button">📚 Go to Word Explorer</a>
+            <a href="{% url 'trainer:idiom_island' %}" class="button secondary">🏝️ Go to Idiom Island</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const allCards = JSON.parse('{{ cards_json|escapejs }}');
+let activeFilter = 'all';
+let cards = [];
+let currentIndex = 0;
+
+const TYPE_COLORS = { word: '#667eea', idiom: '#f59e0b' };
+const TYPE_LABELS = { word: '📚 WORD', idiom: '🏝️ IDIOM' };
+
+function applyFilter(filter) {
+    activeFilter = filter;
+    cards = filter === 'all' ? [...allCards] : allCards.filter(c => c.card_type === filter);
+    document.getElementById('countPill').textContent = cards.length + ' cards';
+    document.getElementById('cardTotal').textContent = cards.length;
+    currentIndex = 0;
+
+    const flipCard = document.getElementById('flipCard');
+    const nav = document.querySelector('.fc-nav');
+    const done = document.getElementById('fcDone');
+    const empty = document.getElementById('fcEmpty');
+
+    if (cards.length === 0) {
+        flipCard.style.display = 'none';
+        nav.style.display = 'none';
+        done.style.display = 'none';
+        empty.style.display = 'block';
+        document.getElementById('cardNum').textContent = '0';
+        document.getElementById('progressFill').style.width = '0%';
+    } else {
+        flipCard.style.display = '';
+        nav.style.display = '';
+        done.style.display = 'none';
+        empty.style.display = 'none';
+        displayCard();
+    }
+}
+
+function displayCard() {
+    const flipInner = document.getElementById('flipInner');
+    const wasFlipped = flipInner.classList.contains('flipped');
+    if (wasFlipped) flipInner.classList.remove('flipped');
+
+    setTimeout(() => {
+        const c = cards[currentIndex];
+        const color = TYPE_COLORS[c.card_type] || '#667eea';
+        const label = TYPE_LABELS[c.card_type] || 'CARD';
+
+        document.getElementById('typeBadge').textContent = label;
+        document.getElementById('typeBadge').style.background = color;
+        document.getElementById('typeBadgeBack').textContent = label;
+        document.getElementById('typeBadgeBack').style.background = color;
+
+        document.getElementById('cardEmoji').textContent = c.emoji || (c.card_type === 'idiom' ? '🏝️' : '✨');
+        document.getElementById('frontText').textContent = c.front_text;
+        document.getElementById('backTitle').textContent = c.front_text;
+        document.getElementById('backText').textContent = c.back_text;
+
+        const exBox = document.getElementById('exampleBox');
+        if (c.example) {
+            document.getElementById('exampleText').textContent = '"' + c.example + '"';
+            exBox.style.display = '';
+        } else {
+            exBox.style.display = 'none';
+        }
+
+        document.getElementById('cardNum').textContent = currentIndex + 1;
+        document.getElementById('progressFill').style.width = ((currentIndex + 1) / cards.length * 100) + '%';
+
+        document.getElementById('prevBtn').disabled = currentIndex === 0;
+        document.getElementById('nextBtn').textContent = currentIndex === cards.length - 1 ? 'Finish ✓' : 'Next →';
+    }, wasFlipped ? 320 : 0);
+}
+
+// Flip
+document.getElementById('flipCard').addEventListener('click', function(e) {
+    const inner = document.getElementById('flipInner');
+    if (!inner.classList.contains('flipped')) inner.classList.add('flipped');
+});
+document.querySelector('.flip-btn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    document.getElementById('flipInner').classList.add('flipped');
+});
+
+// Pronounce
+document.getElementById('pronounceBtn').addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (!window.speechSynthesis || !cards.length) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(cards[currentIndex].front_text);
+    utter.lang = 'en-US';
+    utter.rate = 0.85;
+    window.speechSynthesis.speak(utter);
+});
+
+// Remove
+document.getElementById('removeBtn').addEventListener('click', async function(e) {
+    e.stopPropagation();
+    const c = cards[currentIndex];
+    this.textContent = '🗑 Removing...';
+    this.disabled = true;
+    try {
+        await fetch('/api/flashcard/delete/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: c.id }),
+        });
+        // Remove from both allCards and cards
+        const allIdx = allCards.findIndex(x => x.id === c.id);
+        if (allIdx !== -1) allCards.splice(allIdx, 1);
+        cards.splice(currentIndex, 1);
+
+        if (cards.length === 0) {
+            applyFilter(activeFilter);
+        } else {
+            if (currentIndex >= cards.length) currentIndex = cards.length - 1;
+            document.getElementById('countPill').textContent = cards.length + ' cards';
+            document.getElementById('cardTotal').textContent = cards.length;
+            displayCard();
+        }
+    } catch (err) {
+        this.textContent = '🗑 Remove';
+        this.disabled = false;
+    }
+});
+
+// Nav
+document.getElementById('prevBtn').addEventListener('click', () => {
+    if (currentIndex > 0) { currentIndex--; displayCard(); }
+});
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentIndex < cards.length - 1) {
+        currentIndex++;
+        displayCard();
+    } else {
+        document.getElementById('flipCard').style.display = 'none';
+        document.querySelector('.fc-nav').style.display = 'none';
+        document.getElementById('fcDone').style.display = 'block';
+        document.getElementById('doneMsg').textContent =
+            `You reviewed all ${cards.length} flashcard${cards.length !== 1 ? 's' : ''}!`;
+    }
+});
+
+// Restart
+document.getElementById('restartBtn').addEventListener('click', () => {
+    document.getElementById('flipCard').style.display = '';
+    document.querySelector('.fc-nav').style.display = '';
+    document.getElementById('fcDone').style.display = 'none';
+    currentIndex = 0;
+    displayCard();
+});
+
+// Filters
+document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        applyFilter(this.dataset.filter);
+    });
+});
+
+// Init
+applyFilter('all');
+</script>
+
+<style>
+main.container { padding-top: 0.75rem; padding-bottom: 1rem; }
+
+.fc-wrapper {
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+.fc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.fc-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.fc-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #667eea;
+}
+
+.fc-count-pill {
+    background: #667eea;
+    color: white;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.fc-filters {
+    display: flex;
+    gap: 0.4rem;
+}
+
+.filter-btn {
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.filter-btn:hover { border-color: #667eea; color: #667eea; }
+.filter-btn.active { background: #667eea; border-color: #667eea; color: white; }
+
+.fc-progress-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+}
+
+.fc-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #8b5cf6);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.fc-progress-label {
+    text-align: center;
+    color: #8b5cf6;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0 0 1rem 0;
+}
+
+/* Flip Card */
+.flip-card {
+    perspective: 1200px;
+    width: 100%;
+    height: 340px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.55s cubic-bezier(0.645, 0.045, 0.355, 1);
+    transform-style: preserve-3d;
+}
+
+.flip-card-inner.flipped { transform: rotateY(180deg); }
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+    gap: 0.75rem;
+}
+
+.flip-card-front {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    text-align: center;
+}
+
+.flip-card-back {
+    background: linear-gradient(135deg, #f8fafc 0%, #f0f4f8 100%);
+    border: 2px solid #e2e8f0;
+    transform: rotateY(180deg);
+    justify-content: flex-start;
+    overflow-y: auto;
+    gap: 0.6rem;
+}
+
+.fc-type-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: white;
+    background: #667eea;
+}
+
+.back-badge { left: 1rem; right: auto; }
+
+.fc-emoji { font-size: 3.5rem; line-height: 1; }
+
+.fc-front-text {
+    font-size: 2.2rem;
+    font-weight: 900;
+    margin: 0;
+    color: white;
+}
+
+.fc-back-title {
+    font-size: 1.7rem;
+    font-weight: 900;
+    color: #667eea;
+    margin: 0;
+    align-self: flex-start;
+}
+
+.fc-back-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+    align-self: flex-start;
+}
+
+.fc-example-box {
+    background: white;
+    border-left: 4px solid #f59e0b;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    align-self: stretch;
+    font-size: 0.9rem;
+}
+
+.eg-label { color: #f59e0b; font-weight: 700; margin-right: 0.25rem; }
+
+.flip-btn {
+    border: 2px solid rgba(255,255,255,0.7);
+    background: transparent;
+    color: white;
+    padding: 0.55rem 1.5rem;
+    border-radius: 2rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+.flip-btn:hover { background: rgba(255,255,255,0.2); }
+
+.fc-back-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: stretch;
+}
+
+.pronounce-btn {
+    flex: 1;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.pronounce-btn:hover { background: #667eea; color: white; }
+
+.remove-btn {
+    flex: 1;
+    border: 2px solid #ef4444;
+    background: white;
+    color: #ef4444;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.remove-btn:hover { background: #ef4444; color: white; }
+.remove-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.fc-nav {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.fc-nav .button { flex: 1; }
+
+/* Done & Empty */
+.fc-done, .fc-empty {
+    background: linear-gradient(135deg, #f8fafc, #f0f4f8);
+    border: 2px solid #e2e8f0;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+.done-emoji, .empty-emoji { font-size: 4rem; margin-bottom: 0.5rem; }
+
+.fc-done h3, .fc-empty h3 {
+    color: #667eea;
+    margin: 0 0 0.5rem;
+    font-size: 1.8rem;
+}
+
+.fc-done p, .fc-empty p {
+    color: #475569;
+    margin: 0 0 1.5rem;
+}
+
+.done-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+    .fc-header { flex-direction: column; align-items: flex-start; }
+    .fc-front-text { font-size: 1.8rem; }
+}
+</style>
+{% endblock %}

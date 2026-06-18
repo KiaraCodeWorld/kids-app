@@ -1,0 +1,150 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<div class="me-wrap">
+
+    <!-- Hero -->
+    <section class="me-hero">
+        <div class="me-hero-glow"></div>
+        <div class="me-avatar">{{ dash.mascot_emoji }}</div>
+        <h2 class="me-name">{{ dash.mascot_name }}</h2>
+        <span class="me-level-pill">🏅 Level {{ dash.level }} · {{ dash.level_title }}</span>
+        <div class="me-xp-track">
+            <div class="me-xp-fill" style="width: {{ dash.level_percent }}%"></div>
+        </div>
+        <p class="me-xp-text">{{ dash.xp }} XP · {{ dash.xp_to_next }} to next level</p>
+    </section>
+
+    <!-- Key stats -->
+    <section class="me-stats">
+        <div class="me-stat">
+            <span class="me-stat-emoji">🔥</span>
+            <strong>{{ dash.streak }}</strong>
+            <small>day streak</small>
+        </div>
+        <div class="me-stat">
+            <span class="me-stat-emoji">🚀</span>
+            <strong>{{ total_missions }}</strong>
+            <small>quests done</small>
+        </div>
+        <div class="me-stat">
+            <span class="me-stat-emoji">🎯</span>
+            <strong>{{ accuracy }}%</strong>
+            <small>accuracy</small>
+        </div>
+        <div class="me-stat">
+            <span class="me-stat-emoji">⭐</span>
+            <strong>{{ longest_streak }}</strong>
+            <small>best streak</small>
+        </div>
+    </section>
+
+    <!-- Skill progress -->
+    <section class="bq-card me-section">
+        <div class="section-head"><h3>📊 My Skills</h3><span class="section-hint">How you're growing</span></div>
+        {% for s in subjects %}
+        <div class="skill-row">
+            <span class="skill-label">{{ s.emoji }} {{ s.label }}</span>
+            <div class="skill-bar">
+                <div class="skill-fill {% if not s.has_data %}empty{% endif %}" style="width: {% if s.has_data %}{{ s.accuracy }}{% else %}0{% endif %}%"></div>
+            </div>
+            <span class="skill-pct">{% if s.has_data %}{{ s.accuracy }}%{% else %}—{% endif %}</span>
+        </div>
+        {% endfor %}
+        <p class="skill-note">Play more quests to fill these in! Brain Quest gives you a little more of what you're learning. 🌱</p>
+    </section>
+
+    <!-- Badges -->
+    <section class="bq-card me-section">
+        <div class="section-head"><h3>🏆 My Badges</h3><span class="section-hint">{{ dash.badges|length }} earned</span></div>
+        {% if dash.badges %}
+        <div class="badge-grid">
+            {% for b in dash.badges %}
+            <div class="badge-cell" title="{{ b.desc }}">
+                <span class="badge-emoji">{{ b.emoji }}</span>
+                <span class="badge-name">{{ b.name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="me-empty">🌟 No badges yet — finish today's quest to earn your first one!</p>
+        {% endif %}
+    </section>
+
+    <!-- Recent quests -->
+    <section class="bq-card me-section">
+        <div class="section-head"><h3>📅 Recent Quests</h3></div>
+        {% if recent %}
+        <div class="history-list">
+            {% for r in recent %}
+            <div class="history-row">
+                <span class="hr-date">{{ r.date|date:"M j" }}</span>
+                <span class="hr-score">{% if r.recovery %}💛 {% endif %}{{ r.score }}/{{ r.total }} correct</span>
+                <span class="hr-xp">+{{ r.xp }} XP</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="me-empty">No quests completed yet. Your adventure starts today! 🚀</p>
+        {% endif %}
+    </section>
+
+    <a href="{% url 'trainer:daily_mission' %}" class="button me-cta">🚀 Start a Quest</a>
+
+</div>
+
+<style>
+.me-wrap { animation: floatIn 0.5s ease-out; }
+
+.me-hero {
+    position: relative; overflow: hidden; text-align: center;
+    background: linear-gradient(135deg, #7c5cff, #ff7eb6);
+    color: #fff; border-radius: var(--radius-lg); padding: 1.75rem 1.5rem 1.5rem;
+    box-shadow: 0 18px 40px rgba(124,92,255,0.32); margin-bottom: 1.1rem;
+}
+.me-hero-glow { position:absolute; width:220px; height:220px; top:-80px; left:50%; transform:translateX(-50%);
+    background: radial-gradient(circle, rgba(255,255,255,0.25), transparent 70%); }
+.me-avatar { font-size: 4.5rem; line-height: 1; position: relative; z-index: 1;
+    animation: mascotBob 3s ease-in-out infinite; filter: drop-shadow(0 6px 12px rgba(0,0,0,.2)); }
+.me-name { margin: 0.4rem 0 0.5rem; font-size: 1.8rem; position: relative; z-index: 1; }
+.me-level-pill { display: inline-block; background: rgba(255,255,255,0.22); border: 2px solid rgba(255,255,255,0.4);
+    padding: 0.35rem 0.9rem; border-radius: 999px; font-weight: 800; font-size: 0.85rem; position: relative; z-index: 1; }
+.me-xp-track { height: 12px; background: rgba(255,255,255,0.28); border-radius: 999px; margin: 0.9rem 0 0.4rem; position: relative; z-index: 1; }
+.me-xp-fill { height: 100%; background: linear-gradient(90deg,#ffd23f,#ff9d5c); border-radius: 999px; transition: width .6s ease; }
+.me-xp-text { margin: 0; font-size: 0.82rem; opacity: 0.95; font-weight: 700; position: relative; z-index: 1; }
+
+.me-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.6rem; margin-bottom: 1.25rem; }
+.me-stat { background: #fff; border-radius: 18px; padding: 0.9rem 0.3rem; text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 0.1rem; box-shadow: var(--shadow-pop); }
+.me-stat-emoji { font-size: 1.5rem; }
+.me-stat strong { font-size: 1.3rem; color: var(--purple); font-family: 'Baloo 2', sans-serif; }
+.me-stat small { font-size: 0.66rem; color: var(--ink-soft); font-weight: 700; }
+
+.me-section { margin-bottom: 1.25rem; }
+.me-section .section-head h3 { font-size: 1.2rem; }
+
+.skill-row { display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem; }
+.skill-label { flex: 0 0 38%; font-weight: 800; font-size: 0.9rem; color: var(--ink); }
+.skill-bar { flex: 1; height: 14px; background: #efecf9; border-radius: 999px; overflow: hidden; }
+.skill-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--purple), var(--pink)); transition: width .6s ease; }
+.skill-fill.empty { background: #e2dff0; }
+.skill-pct { flex: 0 0 auto; font-weight: 800; color: var(--purple); font-size: 0.85rem; min-width: 34px; text-align: right; }
+.skill-note { margin: 0.5rem 0 0; font-size: 0.82rem; color: var(--ink-soft); line-height: 1.4; }
+
+.badge-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px,1fr)); gap: 0.75rem; }
+.badge-cell { display: flex; flex-direction: column; align-items: center; gap: 0.3rem; text-align: center;
+    background: linear-gradient(135deg,#fff6dd,#ffe9b8); border-radius: 16px; padding: 0.85rem 0.4rem; }
+.badge-emoji { font-size: 1.9rem; }
+.badge-name { font-size: 0.68rem; font-weight: 800; color: #9a6a00; line-height: 1.1; }
+
+.history-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.history-row { display: flex; align-items: center; justify-content: space-between;
+    background: #f8f6ff; border-radius: 14px; padding: 0.7rem 0.95rem; }
+.hr-date { font-weight: 800; color: var(--ink-soft); font-size: 0.85rem; flex: 0 0 56px; }
+.hr-score { font-weight: 700; color: var(--ink); font-size: 0.9rem; flex: 1; text-align: center; }
+.hr-xp { font-weight: 900; color: var(--orange-deep); font-size: 0.85rem; }
+
+.me-empty { color: var(--ink-soft); font-weight: 600; text-align: center; padding: 0.5rem 0; margin: 0; }
+.me-cta { display: block; text-align: center; }
+</style>
+{% endblock %}

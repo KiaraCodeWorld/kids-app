@@ -1,0 +1,31 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<section class="challenge-page">
+    <h2>⚡ {{ challenge.title }}</h2>
+    <p style="font-size: 1.2rem; margin: 1.5rem 0;"><strong>{{ challenge.question }}</strong></p>
+
+    <form method="post" class="challenge-form">
+        {% csrf_token %}
+        <input type="text" name="answer" placeholder="Try your answer" value="{{ user_answer }}" />
+        <button type="submit">🎯 Submit Answer</button>
+    </form>
+
+    {% if feedback %}
+    <div class="feedback {{ feedback_class }}">
+        <p><strong>{{ feedback }}</strong></p>
+        {% if show_hint %}
+            <p>💡 <strong>Hint:</strong> {{ challenge.hint }}</p>
+        {% endif %}
+        {% if explanation %}
+            <p>📚 <strong>Explanation:</strong> {{ challenge.explanation }}</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="challenge-links">
+        <a class="button" href="/">← Back to Lessons</a>
+        <a class="button secondary" href="/challenge/">🔄 Try Another</a>
+    </div>
+</section>
+{% endblock %}

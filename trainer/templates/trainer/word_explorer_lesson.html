@@ -1,0 +1,602 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<div class="we-wrapper">
+
+    <!-- Header -->
+    <div class="we-header">
+        <div class="we-header-left">
+            <h2>{{ tier_info.emoji }} Word Explorer</h2>
+            <span class="tier-pill">{{ tier_info.label }}</span>
+        </div>
+        <div class="we-streak" id="streakDisplay">
+            🔥 <span id="streakCount">{{ streak }}</span>-day streak
+        </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="we-progress-bar">
+        <div class="we-progress-fill" id="progressFill" style="width:0%"></div>
+    </div>
+    <p class="we-progress-label">Word <span id="cardNum">1</span> of <span id="cardTotal">{{ word_count }}</span></p>
+
+    <!-- Flip Card -->
+    <div class="flip-card" id="flipCard">
+        <div class="flip-card-inner" id="flipInner">
+
+            <!-- FRONT -->
+            <div class="flip-card-front">
+                <div class="card-type-badge" id="typeBadge">NEW</div>
+                <div class="word-emoji" id="wordEmoji">✨</div>
+                <h3 class="word-title" id="wordTitle">word</h3>
+                <div class="word-context">
+                    <span class="context-label">📍 Where you'll see it:</span>
+                    <span id="wordContext">loading...</span>
+                </div>
+                <button class="flip-btn" id="flipBtn">Tap to reveal meaning →</button>
+            </div>
+
+            <!-- BACK -->
+            <div class="flip-card-back">
+                <div class="card-type-badge back-badge" id="typeBadgeBack">NEW</div>
+                <h3 class="word-title back-title" id="wordTitleBack">word</h3>
+                <p class="back-definition" id="wordDefinition">loading...</p>
+                <div class="back-example">
+                    <span class="example-label">📖 Example:</span>
+                    <em id="wordExample">loading...</em>
+                </div>
+                <div class="use-prompt-box">
+                    <span class="use-label">💬 Use it:</span>
+                    <span id="wordPrompt">loading...</span>
+                </div>
+                <div class="back-actions">
+                    <button class="pronounce-btn" id="pronounceBtn">🔊 Hear it</button>
+                    <button class="ai-btn" id="aiBtn">🤖 AI Explain</button>
+                    <button class="save-btn" id="saveBtn">🔖 Save</button>
+                </div>
+                <div class="ai-explanation" id="aiExplanation" style="display:none">
+                    <p id="aiText">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="we-nav">
+        <button class="button secondary" id="prevBtn" disabled>← Prev</button>
+        <button class="button" id="nextBtn">Next →</button>
+    </div>
+
+    <!-- Completion screen (hidden until done) -->
+    <div class="completion-screen" id="completionScreen" style="display:none">
+        <div class="completion-emoji">🎉</div>
+        <h3>Session Complete!</h3>
+        <p id="completionMsg">Great job! You explored all 3 words today.</p>
+        <div class="streak-banner" id="streakBanner">
+            🔥 <span id="finalStreak">0</span>-day streak!
+        </div>
+        <div class="new-badges" id="newBadgesContainer" style="display:none">
+            <h4>🏅 New Badges Earned!</h4>
+            <div id="newBadgesList"></div>
+        </div>
+        <div class="completion-actions">
+            <a href="{% url 'trainer:idiom_island' %}" class="button">🏝️ Idiom Island</a>
+            <a href="{% url 'trainer:flashcard_review' %}" class="button">🃏 Review Flashcards</a>
+            <a href="{% url 'trainer:word_explorer_home' %}" class="button secondary">← Back to Ages</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const words = JSON.parse('{{ words_json|escapejs }}');
+const tier = '{{ tier }}';
+let currentIndex = 0;
+let completedIds = [];
+let aiLoaded = {};
+
+const flipCard     = document.getElementById('flipCard');
+const flipInner    = document.getElementById('flipInner');
+const flipBtn      = document.getElementById('flipBtn');
+const prevBtn      = document.getElementById('prevBtn');
+const nextBtn      = document.getElementById('nextBtn');
+const progressFill = document.getElementById('progressFill');
+
+const TYPE_COLORS = { new: '#667eea', review: '#f59e0b', challenge: '#ef4444' };
+const TYPE_LABELS = { new: '⭐ NEW', review: '🔄 REVIEW', challenge: '🔥 CHALLENGE' };
+
+function displayWord() {
+    const w = words[currentIndex];
+    const isFlipped = flipInner.classList.contains('flipped');
+    if (isFlipped) flipInner.classList.remove('flipped');
+
+    // Small delay to let unflip happen before updating content
+    setTimeout(() => {
+        const color = TYPE_COLORS[w.word_type] || '#667eea';
+        const label = TYPE_LABELS[w.word_type] || 'WORD';
+
+        document.getElementById('typeBadge').textContent = label;
+        document.getElementById('typeBadge').style.background = color;
+        document.getElementById('typeBadgeBack').textContent = label;
+        document.getElementById('typeBadgeBack').style.background = color;
+
+        document.getElementById('wordEmoji').textContent = w.emoji;
+        document.getElementById('wordTitle').textContent = w.word;
+        document.getElementById('wordTitleBack').textContent = w.word;
+        document.getElementById('wordContext').textContent = w.context;
+        document.getElementById('wordDefinition').textContent = w.definition;
+        document.getElementById('wordExample').textContent = '"' + w.example + '"';
+        document.getElementById('wordPrompt').textContent = w.use_prompt;
+
+        // Reset AI and save state
+        document.getElementById('aiExplanation').style.display = 'none';
+        document.getElementById('aiBtn').textContent = '🤖 AI Explain';
+        document.getElementById('aiBtn').dataset.loaded = 'false';
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.textContent = '🔖 Save';
+        saveBtn.disabled = false;
+
+        // Progress
+        document.getElementById('cardNum').textContent = currentIndex + 1;
+        progressFill.style.width = ((currentIndex + 1) / words.length * 100) + '%';
+
+        prevBtn.disabled = currentIndex === 0;
+        nextBtn.textContent = currentIndex === words.length - 1 ? 'Finish ✓' : 'Next →';
+    }, isFlipped ? 320 : 0);
+}
+
+flipBtn.addEventListener('click', () => {
+    flipInner.classList.add('flipped');
+    // Mark as seen
+    const wid = words[currentIndex].id;
+    if (!completedIds.includes(wid)) completedIds.push(wid);
+});
+
+// Also allow tapping the card front to flip
+flipCard.addEventListener('click', (e) => {
+    if (!flipInner.classList.contains('flipped') && e.target !== flipBtn) {
+        flipBtn.click();
+    }
+});
+
+document.getElementById('pronounceBtn').addEventListener('click', () => {
+    const word = words[currentIndex].word;
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const utter = new SpeechSynthesisUtterance(word);
+    utter.lang = 'en-US';
+    utter.rate = 0.85;
+    window.speechSynthesis.speak(utter);
+});
+
+document.getElementById('aiBtn').addEventListener('click', async function() {
+    const w = words[currentIndex];
+    const aiBox = document.getElementById('aiExplanation');
+    const aiText = document.getElementById('aiText');
+
+    if (this.dataset.loaded === 'true') {
+        aiBox.style.display = aiBox.style.display === 'none' ? 'block' : 'none';
+        this.textContent = aiBox.style.display === 'none' ? '🤖 AI Explain' : '🤖 Hide';
+        return;
+    }
+
+    aiText.textContent = 'Loading AI explanation...';
+    aiBox.style.display = 'block';
+    this.textContent = '🤖 Loading...';
+    this.disabled = true;
+
+    try {
+        const resp = await fetch(`/api/we/explain/${w.word}/${tier}/`);
+        const data = await resp.json();
+        aiText.innerHTML = renderMarkdown(data.explanation || 'Unable to load. Try a dictionary!');
+        this.dataset.loaded = 'true';
+        this.textContent = '🤖 Hide';
+    } catch (err) {
+        aiText.textContent = `Try using "${w.word}" in a sentence today!`;
+        this.dataset.loaded = 'true';
+        this.textContent = '🤖 Hide';
+    }
+    this.disabled = false;
+});
+
+document.getElementById('saveBtn').addEventListener('click', async function() {
+    const w = words[currentIndex];
+    this.textContent = '🔖 Saving...';
+    this.disabled = true;
+    try {
+        const resp = await fetch('/api/flashcard/save/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                card_type: 'word',
+                front_text: w.word,
+                back_text: w.definition,
+                example: w.example,
+                emoji: w.emoji,
+                extra_json: { tier, use_prompt: w.use_prompt, context: w.context },
+            }),
+        });
+        const data = await resp.json();
+        this.textContent = data.is_new ? '✅ Saved!' : '✅ Already saved';
+    } catch (e) {
+        this.textContent = '🔖 Save';
+    }
+    this.disabled = false;
+});
+
+prevBtn.addEventListener('click', () => {
+    if (currentIndex > 0) { currentIndex--; displayWord(); }
+});
+
+nextBtn.addEventListener('click', async () => {
+    // Mark current word as seen
+    const wid = words[currentIndex].id;
+    if (!completedIds.includes(wid)) completedIds.push(wid);
+
+    if (currentIndex < words.length - 1) {
+        currentIndex++;
+        displayWord();
+    } else {
+        await completeSession();
+    }
+});
+
+async function completeSession() {
+    const hasChallenge = words.some(w => w.word_type === 'challenge');
+    try {
+        const resp = await fetch('/api/we/complete/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tier, word_ids: completedIds, has_challenge: hasChallenge }),
+        });
+        const data = await resp.json();
+
+        document.getElementById('finalStreak').textContent = data.streak;
+        document.getElementById('streakCount').textContent = data.streak;
+
+        if (data.new_badges && data.new_badges.length > 0) {
+            const container = document.getElementById('newBadgesContainer');
+            const list = document.getElementById('newBadgesList');
+            container.style.display = 'block';
+            list.innerHTML = data.new_badges.map(b =>
+                `<div class="badge-item">${b.emoji} <strong>${b.name}</strong> — ${b.desc}</div>`
+            ).join('');
+        }
+
+        document.getElementById('completionMsg').textContent =
+            `You explored ${completedIds.length} word${completedIds.length !== 1 ? 's' : ''} today. Total learned: ${data.total_seen}!`;
+
+    } catch (err) {
+        // Silently fail — still show completion
+    }
+
+    flipCard.style.display = 'none';
+    document.querySelector('.we-nav').style.display = 'none';
+    document.getElementById('completionScreen').style.display = 'block';
+}
+
+// Init
+displayWord();
+</script>
+
+<style>
+main.container { padding-top: 0.75rem; padding-bottom: 1rem; }
+
+.we-wrapper {
+    max-width: 680px;
+    margin: 0 auto;
+}
+
+.we-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.we-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
+    color: #667eea;
+}
+
+.we-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.tier-pill {
+    background: #667eea;
+    color: white;
+    padding: 0.2rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.we-streak {
+    background: linear-gradient(135deg, #ff6b35, #f59e0b);
+    color: white;
+    padding: 0.35rem 1rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.we-progress-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 0.4rem;
+}
+
+.we-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #8b5cf6);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.we-progress-label {
+    text-align: center;
+    color: #8b5cf6;
+    font-weight: 700;
+    font-size: 0.85rem;
+    margin: 0 0 1rem 0;
+}
+
+/* ── Flip Card ── */
+.flip-card {
+    perspective: 1200px;
+    width: 100%;
+    height: 360px;
+    margin-bottom: 1rem;
+    cursor: pointer;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.55s cubic-bezier(0.645, 0.045, 0.355, 1);
+    transform-style: preserve-3d;
+}
+
+.flip-card-inner.flipped {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+}
+
+.flip-card-front {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    gap: 0.75rem;
+    text-align: center;
+}
+
+.flip-card-back {
+    background: linear-gradient(135deg, #f8fafc 0%, #f0f4f8 100%);
+    border: 2px solid #e2e8f0;
+    transform: rotateY(180deg);
+    gap: 0.6rem;
+    justify-content: flex-start;
+    overflow-y: auto;
+}
+
+.card-type-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    padding: 0.2rem 0.65rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: white;
+    background: #667eea;
+}
+
+.back-badge {
+    left: 1rem;
+    right: auto;
+}
+
+.word-emoji {
+    font-size: 3.5rem;
+    line-height: 1;
+}
+
+.word-title {
+    font-size: 2.4rem;
+    font-weight: 900;
+    margin: 0;
+    text-transform: lowercase;
+    color: white;
+}
+
+.back-title {
+    color: #667eea;
+    font-size: 1.8rem;
+    margin: 0;
+    align-self: flex-start;
+}
+
+.word-context {
+    background: rgba(255,255,255,0.15);
+    border-radius: 0.75rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.88rem;
+}
+
+.context-label { font-weight: 700; margin-right: 0.25rem; }
+
+.flip-btn {
+    border: 2px solid rgba(255,255,255,0.7);
+    background: transparent;
+    color: white;
+    padding: 0.55rem 1.5rem;
+    border-radius: 2rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+}
+.flip-btn:hover { background: rgba(255,255,255,0.2); }
+
+.back-definition {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #334155;
+    margin: 0;
+    align-self: flex-start;
+}
+
+.back-example {
+    background: white;
+    border-left: 4px solid #f59e0b;
+    border-radius: 0.5rem;
+    padding: 0.4rem 0.75rem;
+    align-self: stretch;
+    font-size: 0.9rem;
+}
+
+.example-label { color: #f59e0b; font-weight: 700; margin-right: 0.25rem; }
+
+.use-prompt-box {
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    border-radius: 0.75rem;
+    padding: 0.4rem 0.75rem;
+    align-self: stretch;
+    font-size: 0.88rem;
+    color: #5b21b6;
+}
+
+.use-label { font-weight: 700; margin-right: 0.25rem; }
+
+.back-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: stretch;
+}
+
+.pronounce-btn, .ai-btn {
+    flex: 1;
+    border: 2px solid #667eea;
+    background: white;
+    color: #667eea;
+    padding: 0.4rem 0.75rem;
+    border-radius: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.pronounce-btn:hover, .ai-btn:hover {
+    background: #667eea;
+    color: white;
+}
+
+.ai-btn { border-color: #8b5cf6; color: #8b5cf6; }
+.ai-btn:hover { background: #8b5cf6; color: white; }
+
+.save-btn { border-color: #10b981; color: #10b981; }
+.save-btn:hover { background: #10b981; color: white; }
+
+.ai-explanation {
+    background: linear-gradient(135deg, #f0e6ff, #e6d7ff);
+    border: 1.5px solid #8b5cf6;
+    border-radius: 0.75rem;
+    padding: 0.6rem 0.85rem;
+    align-self: stretch;
+    animation: slideDown 0.3s ease;
+    max-height: 130px;
+    overflow-y: auto;
+    font-size: 0.82rem;
+    color: #4c1d95;
+    line-height: 1.5;
+}
+
+.ai-explanation p { margin: 0; }
+.ai-explanation strong { color: #5b21b6; }
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.we-nav {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+.we-nav .button { flex: 1; }
+
+/* ── Completion Screen ── */
+.completion-screen {
+    background: linear-gradient(135deg, #f8fafc, #f0f4f8);
+    border: 2px solid #e2e8f0;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    text-align: center;
+    animation: fadeIn 0.5s ease;
+}
+
+.completion-emoji { font-size: 4rem; margin-bottom: 0.5rem; }
+.completion-screen h3 { color: #667eea; margin: 0 0 0.5rem; font-size: 1.8rem; }
+.completion-screen p { color: #475569; margin: 0 0 1rem; }
+
+.streak-banner {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff6b35, #f59e0b);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 999px;
+    font-size: 1.2rem;
+    font-weight: 900;
+    margin-bottom: 1rem;
+}
+
+.new-badges { margin-bottom: 1rem; }
+.new-badges h4 { color: #667eea; margin: 0 0 0.5rem; }
+
+.badge-item {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.5rem 1rem;
+    margin: 0.35rem 0;
+    font-size: 0.95rem;
+    color: #334155;
+}
+
+.completion-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}

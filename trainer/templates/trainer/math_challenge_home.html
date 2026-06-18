@@ -1,0 +1,176 @@
+{% extends 'trainer/base.html' %}
+{% block content %}
+
+<div class="mc-home">
+
+  <div class="mc-hero">
+    <div class="mc-hero-icon">🧮</div>
+    <h1 class="mc-hero-title">Math Challenge</h1>
+    <p class="mc-hero-sub">Real olympiad questions • Step-by-step AI help • Grade-adaptive</p>
+
+    <div class="mc-stats-row">
+      <div class="mc-stat">
+        <span class="mc-stat-num">{{ score }}</span>
+        <span class="mc-stat-lbl">Correct</span>
+      </div>
+      <div class="mc-stat">
+        <span class="mc-stat-num">{{ total_answered }}</span>
+        <span class="mc-stat-lbl">Answered</span>
+      </div>
+      <div class="mc-stat">
+        <span class="mc-stat-num">🔥 {{ streak }}</span>
+        <span class="mc-stat-lbl">Streak</span>
+      </div>
+      <div class="mc-stat">
+        <span class="mc-stat-num">{{ total_questions }}</span>
+        <span class="mc-stat-lbl">Available</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Grade selector -->
+  <h2 class="mc-section-title">Choose Your Grade</h2>
+  <div class="mc-grade-grid">
+    {% for g, cnt in grade_counts %}
+    <a href="{% url 'trainer:math_challenge_quiz_grade' g %}" class="mc-grade-card">
+      <span class="mc-grade-num">Grade {{ g }}</span>
+      <span class="mc-grade-count">{{ cnt }} question{{ cnt|pluralize }}</span>
+      <span class="mc-grade-arrow">Start →</span>
+    </a>
+    {% endfor %}
+    <a href="{% url 'trainer:math_challenge_quiz' %}" class="mc-grade-card mc-grade-all">
+      <span class="mc-grade-num">All Grades</span>
+      <span class="mc-grade-count">Mixed challenge</span>
+      <span class="mc-grade-arrow">Start →</span>
+    </a>
+  </div>
+
+  <!-- Topics -->
+  {% if topics %}
+  <h2 class="mc-section-title">Topics Covered</h2>
+  <div class="mc-topics">
+    {% for t in topics %}
+    <span class="mc-topic-tag">{{ t }}</span>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- How it works -->
+  <div class="mc-how">
+    <h3>How it works</h3>
+    <div class="mc-steps">
+      <div class="mc-step"><span class="mc-step-icon">📖</span><span>Read the question carefully</span></div>
+      <div class="mc-step"><span class="mc-step-icon">💡</span><span>Need a nudge? Tap <strong>Hint</strong></span></div>
+      <div class="mc-step"><span class="mc-step-icon">✅</span><span>Submit your answer</span></div>
+      <div class="mc-step"><span class="mc-step-icon">🤖</span><span>Get AI step-by-step explanation</span></div>
+    </div>
+  </div>
+
+</div>
+
+<style>
+.mc-home { max-width: 700px; margin: 0 auto; padding: 0 0 3rem; }
+
+.mc-hero {
+  background: linear-gradient(135deg, #1e3a5f, #2563eb);
+  color: white;
+  border-radius: 1.5rem;
+  padding: 2rem 1.5rem 1.75rem;
+  text-align: center;
+  margin-bottom: 2rem;
+  box-shadow: 0 20px 50px rgba(37,99,235,0.3);
+}
+.mc-hero-icon { font-size: 3.5rem; margin-bottom: 0.4rem; }
+.mc-hero-title { font-size: 2rem; font-weight: 900; margin: 0 0 0.3rem; }
+.mc-hero-sub { opacity: 0.85; font-size: 0.95rem; margin: 0 0 1.5rem; }
+
+.mc-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+.mc-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255,255,255,0.15);
+  border-radius: 0.85rem;
+  padding: 0.6rem 1.1rem;
+  min-width: 70px;
+}
+.mc-stat-num { font-size: 1.4rem; font-weight: 900; }
+.mc-stat-lbl { font-size: 0.72rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.mc-section-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 1.75rem 0 0.85rem;
+}
+
+.mc-grade-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.85rem;
+}
+.mc-grade-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 1rem;
+  padding: 1.1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  text-decoration: none;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.mc-grade-card:hover {
+  border-color: #2563eb;
+  box-shadow: 0 8px 24px rgba(37,99,235,0.15);
+  transform: translateY(-2px);
+}
+.mc-grade-all { border-color: #f59e0b; background: #fffbeb; }
+.mc-grade-all:hover { border-color: #d97706; box-shadow: 0 8px 24px rgba(217,119,6,0.15); }
+
+.mc-grade-num { font-size: 1.05rem; font-weight: 800; color: #1e293b; }
+.mc-grade-count { font-size: 0.8rem; color: #64748b; }
+.mc-grade-arrow { font-size: 0.85rem; font-weight: 700; color: #2563eb; margin-top: 0.35rem; }
+.mc-grade-all .mc-grade-arrow { color: #d97706; }
+
+.mc-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+.mc-topic-tag {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1.5px solid #bfdbfe;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.mc-how {
+  background: #f8fafc;
+  border-radius: 1rem;
+  padding: 1.25rem 1.5rem;
+  border: 1.5px solid #e2e8f0;
+}
+.mc-how h3 { margin: 0 0 0.85rem; font-size: 1rem; font-weight: 800; color: #1e293b; }
+.mc-steps { display: flex; flex-direction: column; gap: 0.6rem; }
+.mc-step {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+  color: #334155;
+}
+.mc-step-icon { font-size: 1.25rem; flex-shrink: 0; }
+</style>
+
+{% endblock %}

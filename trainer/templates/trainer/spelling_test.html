@@ -1,0 +1,237 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<div class="spelling-wrapper">
+    <div class="spelling-header">
+        <h2>{{ level }} Spelling Test</h2>
+        <div class="level-badge">{{ level }}</div>
+    </div>
+
+    <div class="spelling-progress">
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+        <p class="progress-text">Word <span id="wordNum">1</span> of <span id="wordTotal">{{ word_count }}</span></p>
+    </div>
+
+    <div class="spelling-content">
+        <div class="word-display-section">
+            <div class="word-controls">
+                <button id="speakBtn" class="speak-btn" title="Click to hear the word">
+                    🔊 Hear Word
+                </button>
+                <button id="repeatBtn" class="repeat-btn" title="Repeat the pronunciation" style="display: none;">
+                    🔁 Repeat
+                </button>
+            </div>
+            <p class="instruction-text">Listen carefully to the word, then type it below.</p>
+        </div>
+
+        <div class="input-section">
+            <input
+                type="text"
+                id="spellingInput"
+                class="spelling-input"
+                placeholder="Type the word here..."
+                autocomplete="off"
+            />
+            <div class="input-feedback" id="inputFeedback"></div>
+        </div>
+
+        <div class="hint-section">
+            <button id="hintBtn" class="hint-btn">💡 Get a Hint</button>
+            <div id="hintContent" class="hint-content" style="display: none;">
+                <button class="hint-close" id="hintClose">✕</button>
+                <div id="hintText" class="hint-text"></div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="submitBtn" class="button submit-btn">✓ Check Answer</button>
+            <a href="{% url 'trainer:spelling_home' %}" class="button secondary">← Back to Levels</a>
+        </div>
+    </div>
+
+    <div id="resultScreen" class="result-screen" style="display: none;">
+        <div class="result-card">
+            <div id="resultIcon" class="result-icon">✓</div>
+            <h3 id="resultTitle">Correct!</h3>
+            <p id="resultMessage">Great job! You spelled it correctly.</p>
+            <button id="nextBtn" class="button">Next Word</button>
+        </div>
+    </div>
+
+    <div id="completionScreen" class="completion-screen" style="display: none;">
+        <div class="completion-card">
+            <h2>🎉 Test Complete!</h2>
+            <div class="completion-stats">
+                <div class="stat">
+                    <div class="stat-label">Correct</div>
+                    <div id="correctCount" class="stat-value">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Total</div>
+                    <div id="totalCount" class="stat-value">{{ word_count }}</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">Accuracy</div>
+                    <div id="accuracyPercent" class="stat-value">0%</div>
+                </div>
+            </div>
+            <div class="completion-buttons">
+                <a href="{% url 'trainer:spelling_home' %}" class="button">← Back to Levels</a>
+                <button id="retryBtn" class="button">🔄 Try Again</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const words = JSON.parse('{{ words_json|escapejs }}');
+let currentIndex = 0;
+let correctCount = 0;
+const totalWords = words.length;
+
+const speakBtn = document.getElementById('speakBtn');
+const repeatBtn = document.getElementById('repeatBtn');
+const hintBtn = document.getElementById('hintBtn');
+const hintClose = document.getElementById('hintClose');
+const submitBtn = document.getElementById('submitBtn');
+const nextBtn = document.getElementById('nextBtn');
+const retryBtn = document.getElementById('retryBtn');
+const spellingInput = document.getElementById('spellingInput');
+const hintContent = document.getElementById('hintContent');
+const resultScreen = document.getElementById('resultScreen');
+const completionScreen = document.getElementById('completionScreen');
+
+function getCurrentWord() {
+    return words[currentIndex];
+}
+
+function speakWord() {
+    const word = getCurrentWord();
+    const utterance = new SpeechSynthesisUtterance(word.word);
+    utterance.rate = 0.8;
+    utterance.pitch = 1;
+    window.speechSynthesis.speak(utterance);
+}
+
+speakBtn.addEventListener('click', speakWord);
+repeatBtn.addEventListener('click', speakWord);
+
+hintBtn.addEventListener('click', async () => {
+    const word = getCurrentWord();
+    hintContent.style.display = 'block';
+    const hintText = document.getElementById('hintText');
+    hintText.innerHTML = '<p style="color: #667eea; font-weight: 700;">Loading hint...</p>';
+
+    try {
+        const response = await fetch(`/api/explain-word/${word.word}/`);
+        const data = await response.json();
+        const raw = data.explanation || word.hint;
+        hintText.innerHTML = renderMarkdown(raw);
+    } catch (error) {
+        hintText.innerHTML = `Tip: Say the word slowly syllable by syllable: <strong>${word.word.split('').join('-')}</strong>`;
+    }
+});
+
+hintClose.addEventListener('click', () => {
+    hintContent.style.display = 'none';
+});
+
+submitBtn.addEventListener('click', checkAnswer);
+spellingInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        checkAnswer();
+    }
+});
+
+nextBtn.addEventListener('click', nextWord);
+retryBtn.addEventListener('click', () => {
+    location.reload();
+});
+
+function checkAnswer() {
+    const word = getCurrentWord();
+    const userAnswer = spellingInput.value.toLowerCase().trim();
+    const correctAnswer = word.word.toLowerCase();
+
+    if (userAnswer === correctAnswer) {
+        correctCount++;
+        showResult(true, word.word);
+    } else {
+        showResult(false, word.word, correctAnswer);
+    }
+}
+
+function showResult(isCorrect, word, correctSpelling) {
+    const resultIcon = document.getElementById('resultIcon');
+    const resultTitle = document.getElementById('resultTitle');
+    const resultMessage = document.getElementById('resultMessage');
+
+    if (isCorrect) {
+        resultIcon.textContent = '✓';
+        resultIcon.style.color = '#10b981';
+        resultTitle.textContent = 'Correct!';
+        resultTitle.style.color = '#10b981';
+        resultMessage.textContent = `Excellent! "${word}" is spelled correctly.`;
+    } else {
+        resultIcon.textContent = '✗';
+        resultIcon.style.color = '#ef4444';
+        resultTitle.textContent = 'Not Quite';
+        resultTitle.style.color = '#ef4444';
+        resultMessage.textContent = `The correct spelling is: ${correctSpelling}`;
+    }
+
+    resultScreen.style.display = 'block';
+    submitBtn.style.display = 'none';
+    spellingInput.disabled = true;
+    hintBtn.disabled = true;
+}
+
+function nextWord() {
+    currentIndex++;
+
+    if (currentIndex >= totalWords) {
+        showCompletion();
+    } else {
+        resultScreen.style.display = 'none';
+        submitBtn.style.display = 'block';
+        spellingInput.disabled = false;
+        hintBtn.disabled = false;
+        spellingInput.value = '';
+        hintContent.style.display = 'none';
+
+        showWord();
+    }
+}
+
+function showWord() {
+    const word = getCurrentWord();
+    document.getElementById('wordNum').textContent = currentIndex + 1;
+    document.getElementById('wordTotal').textContent = totalWords;
+
+    const progress = ((currentIndex) / totalWords) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+
+    spellingInput.focus();
+
+    // Auto-speak after a delay
+    setTimeout(() => {
+        speakWord();
+    }, 500);
+}
+
+function showCompletion() {
+    resultScreen.style.display = 'none';
+    completionScreen.style.display = 'block';
+    document.getElementById('correctCount').textContent = correctCount;
+    document.getElementById('totalCount').textContent = totalWords;
+    const accuracy = Math.round((correctCount / totalWords) * 100);
+    document.getElementById('accuracyPercent').textContent = accuracy + '%';
+}
+
+// Initialize
+showWord();
+</script>
+{% endblock %}

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>🦊 Brain Quest — Feel Brilliant Before Breakfast</title>
+    <meta name="theme-color" content="#7c5cff" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/static/trainer/styles.css?v=20260613-3" />
+</head>
+<body>
+    {% block chrome_top %}
+    <!-- ── App header ───────────────────────────────────────── -->
+    <header class="app-header">
+        <div class="app-header-inner">
+            <a href="{% url 'trainer:profile_me' %}" class="profile-chip">
+                <span class="pc-avatar">{{ shell.mascot_emoji|default:"🦊" }}</span>
+                <span class="pc-text">
+                    <span class="pc-hello">Hi, {{ shell.mascot_name|default:"friend" }}!</span>
+                    <span class="pc-progress">
+                        <span class="pc-bar"><span class="pc-bar-fill" style="width: {{ shell.level_percent|default:0 }}%"></span></span>
+                        <span class="pc-lvl">Lv {{ shell.level|default:1 }}</span>
+                    </span>
+                </span>
+            </a>
+
+            <div class="header-right">
+                <a href="{% url 'trainer:mission_home' %}" class="streak-pill" title="Daily streak">
+                    🔥 <span>{{ shell.streak|default:0 }}</span>
+                </a>
+                {% if user.is_authenticated %}
+                  <div class="user-menu">
+                    <button class="bell-btn" onclick="toggleDropdown()" aria-label="Account">
+                      {% if user.profile.get_avatar_url %}
+                        <img src="{{ user.profile.get_avatar_url }}" class="user-avatar" alt="avatar">
+                      {% else %}🔔{% endif %}
+                    </button>
+                    <div class="dropdown-menu" id="userDropdown">
+                      <div class="dm-email">{{ user.email }}</div>
+                      <a href="{% url 'trainer:profile_me' %}">📊 My Progress</a>
+                      <a href="{% url 'trainer:profile_settings' %}">⚙️ Settings</a>
+                      <form method="post" action="{% url 'account_logout' %}">
+                        {% csrf_token %}
+                        <button type="submit">🚪 Sign Out</button>
+                      </form>
+                    </div>
+                  </div>
+                {% else %}
+                  <a href="{% url 'google_login' %}" class="bell-btn" title="Sign in" aria-label="Sign in">🔔</a>
+                {% endif %}
+            </div>
+        </div>
+    </header>
+    {% endblock %}
+
+    <main class="app-main {% block main_class %}{% endblock %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block chrome_bottom %}
+    <!-- ── Floating bottom navigation ───────────────────────── -->
+    <nav class="bottom-nav" aria-label="Main">
+        {% with p=request.path %}
+        <a href="{% url 'trainer:home' %}" class="bn-item {% if p == '/' %}active{% endif %}">
+            <span class="bn-icon">🏠</span><span class="bn-label">Home</span>
+        </a>
+        <a href="{% url 'trainer:home' %}#explore" class="bn-item">
+            <span class="bn-icon">🧭</span><span class="bn-label">Explore</span>
+        </a>
+        <a href="{% url 'trainer:daily_mission' %}" class="bn-item bn-center">
+            <span class="bn-center-btn">🚀</span><span class="bn-label">Quest</span>
+        </a>
+        <a href="{% url 'trainer:flashcard_review' %}" class="bn-item {% if '/flashcards' in p %}active{% endif %}">
+            <span class="bn-icon">🃏</span><span class="bn-label">Cards</span>
+        </a>
+        <a href="{% url 'trainer:profile_me' %}" class="bn-item {% if '/me' in p %}active{% endif %}">
+            <span class="bn-icon">🦊</span><span class="bn-label">Me</span>
+        </a>
+        {% endwith %}
+    </nav>
+    {% endblock %}
+
+<!-- Lottie player web component — use <lottie-player src="/static/trainer/lottie/my.json" autoplay loop style="width:200px"></lottie-player> anywhere -->
+<script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js" defer></script>
+
+<script>
+function toggleDropdown() {
+  const d = document.getElementById('userDropdown');
+  if (d) d.classList.toggle('open');
+}
+document.addEventListener('click', function(e) {
+  const menu = document.getElementById('userDropdown');
+  if (menu && !menu.parentElement.contains(e.target)) menu.classList.remove('open');
+});
+
+function renderMarkdown(text) {
+    return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/^###\s+(.+)$/gm, '<strong class="md-h3">$1</strong>')
+        .replace(/^##\s+(.+)$/gm, '<strong class="md-h2">$1</strong>')
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/(?<![*\n])\*(?!\*|[ \t])(.+?)(?<![* ])\*(?!\*)/g, '<em>$1</em>')
+        .replace(/^[*\-]\s+(.+)$/gm, '<li>$1</li>')
+        .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>[\s\S]*?<\/li>\n?)+/g, (m) => '<ul>' + m + '</ul>')
+        .replace(/\n{2,}/g, '<br><br>')
+        .replace(/\n/g, ' ');
+}
+</script>
+</body>
+</html>

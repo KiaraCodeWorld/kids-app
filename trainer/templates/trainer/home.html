@@ -1,0 +1,329 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+
+<!-- ── Level progress card ──────────────────────────────────── -->
+<section class="level-card">
+    <div class="level-card-info">
+        <span class="level-eyebrow">Level {{ dash.level }}</span>
+        <h2 class="level-title">{{ dash.level_title }}</h2>
+        <p class="level-sub">{{ dash.xp_to_next }} XP to your next badge!</p>
+        <div class="level-track">
+            <div class="level-track-fill" style="width: {{ dash.level_percent }}%">
+                <span class="level-knob"></span>
+            </div>
+        </div>
+    </div>
+    <div class="level-trophy">🏆</div>
+</section>
+
+<!-- ── Daily Quest CTA ──────────────────────────────────────── -->
+<section class="quest-card">
+    <div class="quest-mascot">{{ dash.mascot_emoji }}</div>
+    <div class="quest-body">
+        <span class="quest-says">{{ dash.mascot_name }} says</span>
+        <p class="quest-line">{{ dash.greeting.line }}</p>
+        {% if dash.completed_today %}
+        <a href="{% url 'trainer:mission_home' %}" class="quest-btn done">✅ Quest done — see progress</a>
+        {% else %}
+        <a href="{% url 'trainer:daily_mission' %}" class="quest-btn">
+            🚀 Start Today's Quest <small>3 challenges · ~5 min</small>
+        </a>
+        {% endif %}
+    </div>
+</section>
+
+<!-- ── Benny the AI Bunny Guide ──────────────────────────────── -->
+<section class="benny-section" aria-label="Benny the guide">
+    <div class="benny-bubble" id="bennyBubble">
+        <span id="bennyText"></span><span class="benny-cursor" aria-hidden="true">▋</span>
+    </div>
+    <div class="benny-char" id="bennyChar" role="button" tabindex="0"
+         aria-label="Tap Benny for a brain tip" onclick="bennyNextTip()"
+         onkeydown="if(event.key==='Enter'||event.key===' ')bennyNextTip()">
+        <svg viewBox="0 0 120 155" xmlns="http://www.w3.org/2000/svg" class="benny-svg" aria-hidden="true">
+            <!-- Tail -->
+            <circle cx="93" cy="112" r="9" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+            <!-- Body -->
+            <ellipse cx="60" cy="118" rx="30" ry="24" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+            <!-- Belly patch -->
+            <ellipse cx="60" cy="116" rx="18" ry="14" fill="#fff0f8"/>
+            <!-- Left ear -->
+            <g class="benny-ear-l-grp">
+                <ellipse cx="40" cy="36" rx="11" ry="28" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+                <ellipse cx="40" cy="37" rx="5.5" ry="21" fill="#ffb3d0"/>
+            </g>
+            <!-- Right ear -->
+            <g class="benny-ear-r-grp">
+                <ellipse cx="80" cy="34" rx="11" ry="28" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+                <ellipse cx="80" cy="35" rx="5.5" ry="21" fill="#ffb3d0"/>
+            </g>
+            <!-- Head -->
+            <circle cx="60" cy="72" r="30" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+            <!-- Cheeks -->
+            <ellipse cx="43" cy="80" rx="9" ry="6" fill="#ffb3d0" opacity="0.45"/>
+            <ellipse cx="77" cy="80" rx="9" ry="6" fill="#ffb3d0" opacity="0.45"/>
+            <!-- Left eye -->
+            <circle cx="50" cy="68" r="7" fill="white"/>
+            <circle class="benny-pupil-l" cx="51" cy="68" r="4.2" fill="#2d2a45"/>
+            <circle cx="53.5" cy="65.5" r="1.5" fill="white"/>
+            <rect class="benny-blink-l" x="43" y="61" width="14" height="14" rx="6" fill="#fff3f8"/>
+            <!-- Right eye -->
+            <circle cx="70" cy="68" r="7" fill="white"/>
+            <circle class="benny-pupil-r" cx="71" cy="68" r="4.2" fill="#2d2a45"/>
+            <circle cx="73.5" cy="65.5" r="1.5" fill="white"/>
+            <rect class="benny-blink-r" x="63" y="61" width="14" height="14" rx="6" fill="#fff3f8"/>
+            <!-- Nose -->
+            <ellipse cx="60" cy="78" rx="4.5" ry="3" fill="#ff8eb6"/>
+            <ellipse cx="59" cy="77" rx="1.5" ry="1" fill="#ffadd0" opacity="0.7"/>
+            <!-- Mouth (happy curve) -->
+            <path d="M 53 83 Q 60 90 67 83" stroke="#f4a8c8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Left paw -->
+            <ellipse cx="30" cy="132" rx="13" ry="8.5" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+            <line x1="24" y1="132" x2="26" y2="129" stroke="#f4c4d8" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="30" y1="129" x2="30" y2="126" stroke="#f4c4d8" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="36" y1="131" x2="34" y2="128" stroke="#f4c4d8" stroke-width="1.5" stroke-linecap="round"/>
+            <!-- Right paw -->
+            <ellipse cx="90" cy="132" rx="13" ry="8.5" fill="#fff3f8" stroke="#f4c4d8" stroke-width="2"/>
+            <line x1="84" y1="132" x2="86" y2="129" stroke="#f4c4d8" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="90" y1="129" x2="90" y2="126" stroke="#f4c4d8" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="96" y1="131" x2="94" y2="128" stroke="#f4c4d8" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <div class="benny-tap-hint" aria-hidden="true">tap me!</div>
+    </div>
+    <div class="benny-sparkles" id="bennySparkles" aria-hidden="true">
+        <span class="benny-spark s1">✨</span>
+        <span class="benny-spark s2">⭐</span>
+        <span class="benny-spark s3">💫</span>
+        <span class="benny-spark s4">🌟</span>
+    </div>
+</section>
+
+<script>
+(function () {
+    const BENNY_TIPS = [
+        "Hi! I'm Benny! 🐰 Tap me for a brain tip!",
+        "Math trick: multiply by 5 → halve the number, add a zero! 🧮",
+        "Fun fact: A group of flamingos is called a 'flamboyance'! 🦩",
+        "Reading 15 min a day = about 1 million words a year! 📚",
+        "You're braver than you think and smarter than you know! ⭐",
+        "Brain teaser: Spell SILK out loud… now — what do cows drink? 🐄",
+        "You have more neurons than stars in the Milky Way! 🌌",
+        "The number 1 is neither prime nor composite — it's unique! 🔢",
+        "Every mistake is just a lesson wearing a disguise! 🌱",
+        "3000-year-old honey found in Egypt was still edible! 🍯",
+        "Reading aloud helps you remember 50% more! 📖",
+        "Octopuses have three hearts and blue blood! 🐙",
+        "Learn 5 words a day = 1825 brand-new words per year! 📝",
+        "Sharks existed before trees appeared on Earth! 🦈",
+        "Ready for today's quest? You're going to crush it! 🚀",
+    ];
+    let idx = Math.floor(Math.random() * BENNY_TIPS.length);
+    let typeTimer = null;
+    let autoTimer = null;
+
+    function speak(text, sparkle) {
+        const el = document.getElementById('bennyText');
+        const bubble = document.getElementById('bennyBubble');
+        const char = document.getElementById('bennyChar');
+        if (!el) return;
+        if (typeTimer) clearInterval(typeTimer);
+        el.textContent = '';
+        if (char) { char.classList.add('talking'); setTimeout(() => char.classList.remove('talking'), 1600); }
+        if (bubble) { bubble.classList.add('bounce'); setTimeout(() => bubble.classList.remove('bounce'), 450); }
+        if (sparkle) {
+            const sp = document.getElementById('bennySparkles');
+            if (sp) { sp.classList.add('active'); setTimeout(() => sp.classList.remove('active'), 1000); }
+        }
+        let i = 0;
+        typeTimer = setInterval(() => {
+            if (i < text.length) { el.textContent += text[i++]; }
+            else clearInterval(typeTimer);
+        }, 30);
+    }
+
+    window.bennyNextTip = function () {
+        idx = (idx + 1) % BENNY_TIPS.length;
+        speak(BENNY_TIPS[idx], true);
+        if (autoTimer) clearInterval(autoTimer);
+        autoTimer = setInterval(() => { idx = (idx + 1) % BENNY_TIPS.length; speak(BENNY_TIPS[idx], false); }, 12000);
+    };
+
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(() => {
+            speak(BENNY_TIPS[idx], false);
+            autoTimer = setInterval(() => { idx = (idx + 1) % BENNY_TIPS.length; speak(BENNY_TIPS[idx], false); }, 12000);
+        }, 1000);
+    });
+}());
+</script>
+
+<!-- ── Explore launcher ─────────────────────────────────────── -->
+<section class="explore" id="explore">
+    <div class="section-head">
+        <h3>🧭 Explore &amp; Play</h3>
+        <span class="section-hint">Tap an adventure!</span>
+    </div>
+    <div class="launcher">
+        <a class="launch-tile lt-math" href="{% url 'trainer:math_challenge_home' %}">
+            <span class="lt-icon">🧮</span><span class="lt-name">Math</span>
+        </a>
+        <a class="launch-tile lt-mental" href="{% url 'trainer:mental_quiz_home' %}">
+            <span class="lt-icon">🧠</span><span class="lt-name">Mental Math</span>
+        </a>
+        <a class="launch-tile lt-words" href="{% url 'trainer:word_explorer_home' %}">
+            <span class="lt-icon">🗺️</span><span class="lt-name">Words</span>
+        </a>
+        <a class="launch-tile lt-vocab" href="{% url 'trainer:vocabulary_home' %}">
+            <span class="lt-icon">📖</span><span class="lt-name">Vocabulary</span>
+        </a>
+        <a class="launch-tile lt-spell" href="{% url 'trainer:spelling_home' %}">
+            <span class="lt-icon">🐝</span><span class="lt-name">Spelling</span>
+        </a>
+        <a class="launch-tile lt-idiom" href="{% url 'trainer:idiom_island' %}">
+            <span class="lt-icon">🏝️</span><span class="lt-name">Idioms</span>
+        </a>
+        <a class="launch-tile lt-discover" href="{% url 'trainer:daily_discovery_home' %}">
+            <span class="lt-icon">🌟</span><span class="lt-name">Discover</span>
+        </a>
+        <a class="launch-tile lt-cards" href="{% url 'trainer:flashcard_review' %}">
+            <span class="lt-icon">🃏</span><span class="lt-name">Flashcards</span>
+        </a>
+    </div>
+</section>
+
+<!-- ── Math trick library ───────────────────────────────────── -->
+<section class="categories">
+    <h3>📚 Math Trick Categories</h3>
+    <div class="category-grid">
+        {% for group in category_groups %}
+        <div class="category-card">
+            <span class="category-pill">{{ group.category }}</span>
+            <h4>{{ group.lessons|length }} tricks</h4>
+            <p>Master {{ group.category|lower }} with lightning-fast techniques.</p>
+            {% if group.lessons %}
+            <a class="category-link" href="{% url 'trainer:speed_test' group.lessons.0.slug %}">⚡ Speed Test</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="levels">
+    <h3>🏆 Lessons by Skill Level</h3>
+    <div class="card-grid">
+        {% for group in level_groups %}
+        <div class="card">
+            <h4>{{ group.level }}</h4>
+            <p><strong>{{ group.lessons|length }}</strong> lesson{{ group.lessons|length|pluralize }}</p>
+            <ul>
+                {% for lesson in group.lessons %}
+                <li><a href="{% url 'trainer:lesson_detail' lesson.slug %}">{{ lesson.emoji }} {{ lesson.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="levels">
+    <h3>🎂 Pick Your Age Group</h3>
+    <div class="card-grid">
+        {% for group in age_groups %}
+        <div class="card">
+            <h4>Age {{ group.age_range }}</h4>
+            <p><strong>{{ group.lessons|length }}</strong> perfect lesson{{ group.lessons|length|pluralize }}</p>
+            <ul>
+                {% for lesson in group.lessons %}
+                <li><a href="{% url 'trainer:lesson_detail' lesson.slug %}">{{ lesson.emoji }} {{ lesson.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<style>
+/* ── Level card ── */
+.level-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: linear-gradient(135deg, #7c5cff 0%, #9d5cf0 100%);
+    color: #fff; border-radius: var(--radius-lg); padding: 1.4rem 1.5rem;
+    box-shadow: 0 18px 40px rgba(124,92,255,0.32);
+    margin-bottom: 1.1rem; position: relative; overflow: hidden;
+    animation: floatIn 0.5s ease-out;
+}
+.level-card::after {
+    content:''; position:absolute; width:160px; height:160px; right:-40px; bottom:-60px;
+    background: radial-gradient(circle, rgba(255,255,255,0.18), transparent 70%); border-radius:50%;
+}
+.level-card-info { flex: 1; position: relative; z-index: 1; }
+.level-eyebrow { font-weight: 800; font-size: 0.8rem; opacity: 0.85; letter-spacing: .5px; }
+.level-title { margin: 0.1rem 0 0.15rem; font-size: 1.7rem; }
+.level-sub { margin: 0 0 0.85rem; font-size: 0.85rem; opacity: 0.9; }
+.level-track { height: 12px; background: rgba(255,255,255,0.28); border-radius: 999px; }
+.level-track-fill { height: 100%; background: linear-gradient(90deg,#ffd23f,#ff9d5c);
+    border-radius: 999px; position: relative; transition: width .6s cubic-bezier(.34,1.56,.64,1); min-width: 14px; }
+.level-knob { position:absolute; right:-3px; top:50%; transform:translateY(-50%);
+    width:18px; height:18px; background:#fff; border-radius:50%; box-shadow:0 2px 6px rgba(0,0,0,.25); }
+.level-trophy { font-size: 3.4rem; position: relative; z-index: 1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.25));
+    animation: mascotBob 3s ease-in-out infinite; }
+
+/* ── Quest CTA card ── */
+.quest-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: #fff; border-radius: var(--radius-lg); padding: 1.25rem;
+    box-shadow: var(--shadow-soft); margin-bottom: 1.5rem;
+    animation: floatIn 0.6s ease-out;
+}
+.quest-mascot { font-size: 3.4rem; flex-shrink: 0; animation: mascotBob 3s ease-in-out infinite; }
+.quest-body { flex: 1; min-width: 0; }
+.quest-says { font-weight: 800; color: var(--purple); font-size: 0.78rem; }
+.quest-line { margin: 0.15rem 0 0.85rem; font-weight: 700; color: var(--ink); font-size: 1.05rem; line-height: 1.3; }
+.quest-btn {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    background: linear-gradient(135deg, var(--orange), var(--orange-deep)); color: #fff;
+    text-decoration: none; padding: 0.85rem; border-radius: var(--radius-md); font-weight: 900; font-size: 1.05rem;
+    box-shadow: 0 12px 26px rgba(255,126,60,0.4); transition: transform .25s, box-shadow .25s;
+}
+.quest-btn small { font-weight: 600; font-size: 0.72rem; opacity: 0.92; }
+.quest-btn:hover { transform: translateY(-3px); box-shadow: 0 18px 34px rgba(255,126,60,0.5); }
+.quest-btn.done { background: #eef0fb; color: var(--purple); box-shadow: none; }
+
+/* ── Explore launcher ── */
+.section-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 0.9rem; }
+.section-head h3 { margin: 0; font-size: 1.3rem; color: var(--ink); }
+.section-hint { font-size: 0.8rem; color: var(--ink-soft); font-weight: 700; }
+
+.explore { margin-bottom: 1.75rem; }
+.launcher { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.85rem 0.5rem; }
+.launch-tile {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    text-decoration: none; color: var(--ink);
+}
+.lt-icon {
+    width: 64px; height: 64px; border-radius: 22px;
+    display: flex; align-items: center; justify-content: center; font-size: 2rem;
+    box-shadow: 0 10px 22px rgba(45,42,69,0.14); transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.launch-tile:active .lt-icon { transform: scale(0.92); }
+.launch-tile:hover .lt-icon { transform: translateY(-4px) rotate(-3deg); }
+.lt-name { font-size: 0.74rem; font-weight: 800; text-align: center; line-height: 1.1; }
+
+.lt-math .lt-icon     { background: linear-gradient(135deg,#ffb3b3,#ff8e8e); }
+.lt-mental .lt-icon   { background: linear-gradient(135deg,#c5b6ff,#a98cff); }
+.lt-words .lt-icon    { background: linear-gradient(135deg,#9be7df,#5fd0c4); }
+.lt-vocab .lt-icon    { background: linear-gradient(135deg,#a9d4ff,#7bb8ff); }
+.lt-spell .lt-icon    { background: linear-gradient(135deg,#ffd79c,#ffb95f); }
+.lt-idiom .lt-icon    { background: linear-gradient(135deg,#ffb3da,#ff8ec5); }
+.lt-discover .lt-icon { background: linear-gradient(135deg,#ffe487,#ffcf45); }
+.lt-cards .lt-icon    { background: linear-gradient(135deg,#c3b8ff,#9d83ff); }
+
+@keyframes floatIn { from { opacity:0; transform: translateY(18px); } to { opacity:1; transform:none; } }
+
+@media (max-width: 380px) {
+    .launcher { grid-template-columns: repeat(3, 1fr); }
+    .level-title { font-size: 1.4rem; }
+}
+</style>
+{% endblock %}

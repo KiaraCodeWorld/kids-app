@@ -1,0 +1,167 @@
+{% extends 'trainer/base.html' %}
+{% block content %}
+
+<div class="dd-wrapper">
+
+  <div class="dd-hero">
+    <div class="dd-hero-text">
+      <h2>🌟 Daily Discovery</h2>
+      <p>One amazing thing from 7 different worlds — space, life skills, fun facts, quick hacks, brain games, trending topics, and today's news. Takes under 5 minutes total.</p>
+    </div>
+    <div class="dd-streak-badge">
+      <div class="dd-streak-num">🔥 {{ streak }}</div>
+      <div class="dd-streak-label">day streak</div>
+      <div class="dd-progress-wrap">
+        <div class="dd-progress-bar" style="width:{{ completed_today }}00%/{{ total_categories }}">
+          <div class="dd-progress-fill" style="width:{% widthratio completed_today total_categories 100 %}%"></div>
+        </div>
+        <span class="dd-progress-label">{{ completed_today }}/{{ total_categories }} today</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="dd-grid">
+    {% for card in cards %}
+    <a href="{% url 'trainer:daily_discovery_item' card.category %}"
+       class="dd-card {% if card.completed %}dd-card--done{% endif %}"
+       style="--card-color:{{ card.color }};--card-bg:{{ card.bg }}">
+      <div class="dd-card-check">{% if card.completed %}✅{% endif %}</div>
+      <div class="dd-cat-emoji">{{ card.emoji }}</div>
+      <h3 class="dd-cat-label">{{ card.label }}</h3>
+      <p class="dd-card-title">{{ card.title }}</p>
+      <p class="dd-card-teaser">{{ card.teaser }}</p>
+      {% if card.count %}<span class="dd-count">{{ card.count }} items</span>{% endif %}
+      <div class="dd-card-cta">Explore →</div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="dd-footer-tip">
+    <h4>🎯 How it works</h4>
+    <p>Each category gives you one fresh thing to learn today. Come back tomorrow for something different in every category. Build a streak by visiting daily!</p>
+  </div>
+
+</div>
+
+<style>
+.dd-wrapper { max-width: 900px; margin: 0 auto; }
+
+.dd-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.dd-hero-text h2 { color: #667eea; margin: 0 0 0.4rem; font-size: 1.8rem; }
+.dd-hero-text p  { color: #475569; margin: 0; max-width: 520px; font-size: 0.95rem; }
+
+.dd-streak-badge {
+  background: linear-gradient(135deg, #1e1b4b, #4c1d95);
+  color: white;
+  border-radius: 1.2rem;
+  padding: 1rem 1.5rem;
+  text-align: center;
+  min-width: 140px;
+}
+.dd-streak-num   { font-size: 2.2rem; font-weight: 900; }
+.dd-streak-label { font-size: 0.8rem; opacity: 0.8; margin-bottom: 0.75rem; }
+
+.dd-progress-wrap { margin-top: 0.5rem; }
+.dd-progress-bar {
+  background: rgba(255,255,255,0.2);
+  border-radius: 999px;
+  height: 8px;
+  overflow: hidden;
+  margin-bottom: 0.25rem;
+}
+.dd-progress-fill {
+  background: linear-gradient(90deg, #10b981, #34d399);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
+.dd-progress-label { font-size: 0.75rem; opacity: 0.85; }
+
+/* Grid */
+.dd-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.dd-card {
+  background: var(--card-bg, #f8fafc);
+  border: 2px solid transparent;
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  cursor: pointer;
+}
+.dd-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  transition: left 0.45s;
+}
+.dd-card:hover::before { left: 100%; }
+.dd-card:hover {
+  border-color: var(--card-color, #667eea);
+  transform: translateY(-6px) scale(1.01);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+}
+.dd-card--done {
+  opacity: 0.75;
+}
+.dd-card--done::after {
+  content: 'Done today ✓';
+  position: absolute;
+  top: 0.6rem; right: 0.75rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #10b981;
+  background: #dcfce7;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+}
+.dd-card-check { display: none; }
+
+.dd-cat-emoji  { font-size: 2.8rem; line-height: 1; }
+.dd-cat-label  { font-size: 0.78rem; font-weight: 800; text-transform: uppercase;
+                  letter-spacing: 0.08em; color: var(--card-color, #667eea); margin: 0; }
+.dd-card-title { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin: 0; line-height: 1.3; }
+.dd-card-teaser{ font-size: 0.85rem; color: #64748b; margin: 0; flex-grow: 1; }
+.dd-count {
+  font-size: 0.72rem; font-weight: 700;
+  background: var(--card-color, #667eea);
+  color: white; padding: 0.15rem 0.6rem;
+  border-radius: 999px; width: fit-content;
+}
+.dd-card-cta {
+  margin-top: 0.5rem;
+  font-size: 0.88rem; font-weight: 700;
+  color: var(--card-color, #667eea);
+}
+
+.dd-footer-tip {
+  background: linear-gradient(135deg, #f0f4f8, #e8f0fe);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+}
+.dd-footer-tip h4 { color: #667eea; margin: 0 0 0.35rem; }
+.dd-footer-tip p  { color: #475569; margin: 0; font-size: 0.92rem; }
+</style>
+{% endblock %}

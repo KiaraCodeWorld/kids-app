@@ -1,0 +1,392 @@
+{% extends 'trainer/base.html' %}
+{% block content %}
+<div class="mq-wrapper">
+
+    <!-- ── Quiz Screen ── -->
+    <div id="quizScreen">
+        <div class="mq-header">
+            <div class="mq-meta">
+                <span class="mq-level-badge">{{ grade_label }}</span>
+                <span class="mq-counter">Q <span id="qNum">1</span> / {{ question_count }}</span>
+            </div>
+            <div class="mq-timer-pill" id="qTimer">0.0s</div>
+        </div>
+
+        <div class="mq-progress-bar"><div id="mq-progress" class="mq-progress-fill"></div></div>
+
+        <div class="mq-card" id="qCard">
+            <div class="mq-category" id="qCategory">—</div>
+            <div class="mq-question" id="qText">Loading...</div>
+        </div>
+
+        <div class="mq-answer-row">
+            <input type="text" id="answerInput" class="mq-answer-input" placeholder="Your answer…" autocomplete="off" autocorrect="off" spellcheck="false" />
+            <button id="submitBtn" class="mq-submit-btn">Submit →</button>
+        </div>
+
+        <div id="feedbackBanner" class="mq-feedback" style="display:none"></div>
+
+        <div class="mq-skip-row">
+            <button id="skipBtn" class="mq-skip-btn">Skip →</button>
+        </div>
+    </div>
+
+    <!-- ── Results Screen ── -->
+    <div id="resultsScreen" style="display:none">
+        <div class="mq-results-header">
+            <h2>🎉 Quiz Complete!</h2>
+            <div class="mq-results-stats">
+                <div class="mq-stat">
+                    <div class="mq-stat-label">Correct</div>
+                    <div class="mq-stat-value" id="resCorrect">—</div>
+                </div>
+                <div class="mq-stat">
+                    <div class="mq-stat-label">Accuracy</div>
+                    <div class="mq-stat-value" id="resAccuracy">—</div>
+                </div>
+                <div class="mq-stat">
+                    <div class="mq-stat-label">Avg Time</div>
+                    <div class="mq-stat-value" id="resAvgTime">—</div>
+                </div>
+                <div class="mq-stat">
+                    <div class="mq-stat-label">Best Time</div>
+                    <div class="mq-stat-value" id="resBestTime">—</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mq-breakdown">
+            <h3>Question Breakdown</h3>
+            <div id="breakdownList" class="mq-breakdown-list"></div>
+        </div>
+
+        <div class="mq-results-btns">
+            <a href="{% url 'trainer:mental_quiz' grade %}" class="button">🔄 New Quiz</a>
+            <a href="{% url 'trainer:mental_quiz_home' %}" class="button secondary">← Choose Level</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+const questions = JSON.parse('{{ questions_json|escapejs }}');
+let idx = 0;
+let qStartTime = null;
+let results = [];
+
+const qNum      = document.getElementById('qNum');
+const qCategory = document.getElementById('qCategory');
+const qText     = document.getElementById('qText');
+const qCard     = document.getElementById('qCard');
+const qTimer    = document.getElementById('qTimer');
+const answerInput   = document.getElementById('answerInput');
+const submitBtn     = document.getElementById('submitBtn');
+const skipBtn       = document.getElementById('skipBtn');
+const feedbackBanner = document.getElementById('feedbackBanner');
+const progress      = document.getElementById('mq-progress');
+
+let timerInterval = null;
+
+function startQuestion() {
+    if (idx >= questions.length) { showResults(); return; }
+    const q = questions[idx];
+    qNum.textContent = idx + 1;
+    qCategory.textContent = q.category;
+    qText.textContent = q.question;
+    answerInput.value = '';
+    answerInput.disabled = false;
+    feedbackBanner.style.display = 'none';
+    qCard.classList.remove('mq-correct', 'mq-wrong');
+    progress.style.width = (idx / questions.length * 100) + '%';
+
+    qStartTime = Date.now();
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        qTimer.textContent = ((Date.now() - qStartTime) / 1000).toFixed(1) + 's';
+    }, 100);
+
+    answerInput.focus();
+}
+
+function normalise(str) {
+    return str.trim().toLowerCase()
+        .replace(/\s+/g, ' ')
+        .replace(/\$/g, '')
+        .replace(/¢/g, ' cents')
+        .replace(/,/g, '');
+}
+
+function checkAnswer(skipped = false) {
+    clearInterval(timerInterval);
+    const elapsed = (Date.now() - qStartTime) / 1000;
+    const q = questions[idx];
+    const userRaw = answerInput.value;
+    const correct = !skipped && normalise(userRaw) === normalise(q.answer);
+
+    results.push({ question: q.question, category: q.category, answer: q.answer,
+                   userAnswer: skipped ? '(skipped)' : userRaw, correct, time: elapsed });
+
+    answerInput.disabled = true;
+
+    if (correct) {
+        qCard.classList.add('mq-correct');
+        feedbackBanner.textContent = `✓ Correct! (${elapsed.toFixed(1)}s)`;
+        feedbackBanner.className = 'mq-feedback mq-fb-correct';
+        feedbackBanner.style.display = 'block';
+        setTimeout(nextQ, 900);
+    } else {
+        qCard.classList.add('mq-wrong');
+        feedbackBanner.innerHTML = skipped
+            ? `Skipped — answer: <strong>${q.answer}</strong>`
+            : `✗ Incorrect — answer: <strong>${q.answer}</strong>`;
+        feedbackBanner.className = 'mq-feedback mq-fb-wrong';
+        feedbackBanner.style.display = 'block';
+        setTimeout(nextQ, 1800);
+    }
+}
+
+function nextQ() { idx++; startQuestion(); }
+
+submitBtn.addEventListener('click', () => checkAnswer(false));
+skipBtn.addEventListener('click',   () => checkAnswer(true));
+answerInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAnswer(false);
+});
+
+function showResults() {
+    document.getElementById('quizScreen').style.display = 'none';
+    document.getElementById('resultsScreen').style.display = 'block';
+    progress.style.width = '100%';
+
+    const correct = results.filter(r => r.correct).length;
+    const times = results.map(r => r.time);
+    const avg = times.reduce((a,b)=>a+b,0) / times.length;
+    const best = Math.min(...times);
+
+    document.getElementById('resCorrect').textContent   = `${correct}/${results.length}`;
+    document.getElementById('resAccuracy').textContent  = Math.round(correct/results.length*100) + '%';
+    document.getElementById('resAvgTime').textContent   = avg.toFixed(1) + 's';
+    document.getElementById('resBestTime').textContent  = best.toFixed(1) + 's';
+
+    const list = document.getElementById('breakdownList');
+    results.forEach((r, i) => {
+        const row = document.createElement('div');
+        row.className = 'mq-bd-row ' + (r.correct ? 'bd-correct' : 'bd-wrong');
+        row.innerHTML = `
+            <span class="bd-num">${i+1}</span>
+            <span class="bd-cat">${r.category}</span>
+            <span class="bd-q">${r.question}</span>
+            <span class="bd-ans">${r.correct ? '✓' : '✗'} ${r.correct ? r.answer : r.userAnswer + ' → ' + r.answer}</span>
+            <span class="bd-time">${r.time.toFixed(1)}s</span>
+        `;
+        list.appendChild(row);
+    });
+}
+
+startQuestion();
+</script>
+
+<style>
+.mq-wrapper {
+    max-width: 680px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 20px 50px rgba(15,23,42,0.1);
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ── header ── */
+.mq-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+.mq-meta { display: flex; align-items: center; gap: 0.75rem; }
+.mq-level-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 999px;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+.mq-counter { font-weight: 700; color: #667eea; font-size: 1rem; }
+.mq-timer-pill {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 999px;
+    padding: 0.35rem 1rem;
+    font-weight: 800;
+    color: #92400e;
+    font-size: 1rem;
+    min-width: 70px;
+    text-align: center;
+}
+
+/* ── progress ── */
+.mq-progress-bar {
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+.mq-progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    transition: width 0.4s ease;
+}
+
+/* ── question card ── */
+.mq-card {
+    background: linear-gradient(135deg, #f8fafc, #f0f4f8);
+    border: 2px solid #e2e8f0;
+    border-radius: 1.2rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    min-height: 120px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: border-color 0.3s, background 0.3s;
+}
+.mq-card.mq-correct { border-color: #10b981; background: linear-gradient(135deg, #d1fae5, #ecfdf5); }
+.mq-card.mq-wrong   { border-color: #ef4444; background: linear-gradient(135deg, #fee2e2, #fef2f2); }
+
+.mq-category {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #667eea;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+.mq-question {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #1e293b;
+    line-height: 1.5;
+}
+
+/* ── answer ── */
+.mq-answer-row {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+.mq-answer-input {
+    flex: 1;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1e293b;
+    transition: border-color 0.2s;
+    outline: none;
+}
+.mq-answer-input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+.mq-answer-input:disabled { background: #f8fafc; }
+
+.mq-submit-btn {
+    border: none;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border-radius: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+.mq-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(102,126,234,0.35); }
+
+/* ── feedback ── */
+.mq-feedback {
+    border-radius: 0.75rem;
+    padding: 0.6rem 1rem;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+.mq-fb-correct { background: #d1fae5; color: #065f46; }
+.mq-fb-wrong   { background: #fee2e2; color: #991b1b; }
+
+/* ── skip ── */
+.mq-skip-row { text-align: right; }
+.mq-skip-btn {
+    background: none;
+    border: 2px solid #cbd5e1;
+    color: #94a3b8;
+    border-radius: 0.6rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.mq-skip-btn:hover { border-color: #667eea; color: #667eea; }
+
+/* ── results ── */
+.mq-results-header { text-align: center; margin-bottom: 1.25rem; }
+.mq-results-header h2 { color: #667eea; margin: 0 0 1rem; font-size: 1.75rem; }
+
+.mq-results-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+.mq-stat {
+    background: linear-gradient(135deg, #f8fafc, #f0f4f8);
+    border: 2px solid #e2e8f0;
+    border-radius: 1rem;
+    padding: 0.85rem 0.5rem;
+    text-align: center;
+}
+.mq-stat-label { font-size: 0.78rem; color: #667eea; font-weight: 700; margin-bottom: 0.3rem; }
+.mq-stat-value { font-size: 1.6rem; font-weight: 800; color: #1e293b; }
+
+/* ── breakdown ── */
+.mq-breakdown h3 { color: #667eea; margin: 0 0 0.75rem; font-size: 1.1rem; }
+.mq-breakdown-list { display: flex; flex-direction: column; gap: 0.4rem; }
+
+.mq-bd-row {
+    display: grid;
+    grid-template-columns: 24px 90px 1fr 120px 48px;
+    gap: 0.5rem;
+    align-items: center;
+    border-radius: 0.6rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+}
+.bd-correct { background: #f0fdf4; border: 1px solid #bbf7d0; }
+.bd-wrong   { background: #fff1f2; border: 1px solid #fecdd3; }
+
+.bd-num  { font-weight: 800; color: #667eea; }
+.bd-cat  { color: #64748b; font-weight: 600; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bd-q    { font-weight: 600; color: #1e293b; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bd-ans  { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bd-correct .bd-ans { color: #059669; }
+.bd-wrong   .bd-ans { color: #dc2626; }
+.bd-time { text-align: right; font-weight: 700; color: #667eea; white-space: nowrap; }
+
+.mq-results-btns {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+.mq-results-btns .button { flex: 1; text-align: center; }
+
+@media (max-width: 520px) {
+    .mq-results-stats { grid-template-columns: 1fr 1fr; }
+    .mq-bd-row { grid-template-columns: 20px 1fr auto; }
+    .bd-cat, .bd-time { display: none; }
+    .mq-question { font-size: 1.15rem; }
+}
+</style>
+{% endblock %}

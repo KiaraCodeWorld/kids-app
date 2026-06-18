@@ -1,0 +1,151 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<section class="hero">
+    <div class="hero-text">
+        <h2>📚 Vocabulary Builder</h2>
+        <p>Expand your everyday vocabulary! Learn words that are actually used in real life, not just in textbooks. Each lesson includes definitions, real-world usage examples, and memory tricks to help you remember.</p>
+        <div class="hero-badges">
+            <span>💡 Real-Life Words</span>
+            <span>🎯 Practical Usage</span>
+            <span>🧠 Memory Tricks</span>
+            <span>📖 3 Words Per Lesson</span>
+        </div>
+    </div>
+</section>
+
+<section class="categories">
+    <h3>🎓 Choose Your Level</h3>
+    <p>Start with words that match your current vocabulary level, or challenge yourself with advanced words.</p>
+
+    <div class="vocab-grid">
+        <a href="{% url 'trainer:vocabulary_lesson' 'Beginner' %}" class="vocab-card beginner-card">
+            <div class="card-badge">🌱</div>
+            <h4>Beginner</h4>
+            <p class="card-subtitle">Everyday Words</p>
+            <p>Learn common words you hear and use every day like "persevere", "meticulous", and "pragmatic".</p>
+            <button class="button">Start Learning</button>
+        </a>
+
+        <a href="{% url 'trainer:vocabulary_lesson' 'Intermediate' %}" class="vocab-card intermediate-card">
+            <div class="card-badge">📚</div>
+            <h4>Intermediate</h4>
+            <p class="card-subtitle">Useful Vocabulary</p>
+            <p>Expand with words like "eloquent", "resilient", "diligent" that appear in conversations and writing.</p>
+            <button class="button">Start Challenge</button>
+        </a>
+
+        <a href="{% url 'trainer:vocabulary_lesson' 'Advanced' %}" class="vocab-card advanced-card">
+            <div class="card-badge">🎓</div>
+            <h4>Advanced</h4>
+            <p class="card-subtitle">Advanced Vocabulary</p>
+            <p>Master sophisticated words like "perspicacious", "ameliorate", "sagacious" used in professional settings.</p>
+            <button class="button">Start Advanced</button>
+        </a>
+    </div>
+</section>
+
+<section class="levels">
+    <h3>✨ Why Learn with Us?</h3>
+    <div class="card-grid">
+        <div class="card">
+            <h4>💬 Real Usage</h4>
+            <p>Every word comes with actual usage examples from everyday situations.</p>
+        </div>
+        <div class="card">
+            <h4>🧠 Memory Tricks</h4>
+            <p>Get mnemonics and memory tricks to help you remember words forever.</p>
+        </div>
+        <div class="card">
+            <h4>🎯 Practical Focus</h4>
+            <p>Learn words you'll actually use in conversation, not obscure dictionary words.</p>
+        </div>
+        <div class="card">
+            <h4>🤖 AI Powered</h4>
+            <p>Get detailed explanations from Gemma-4 AI for deeper understanding.</p>
+        </div>
+    </div>
+</section>
+
+<style>
+.vocab-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+}
+
+.vocab-card {
+    position: relative;
+    border: 2px solid #e2e8f0;
+    border-radius: 1.2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8fafc 0%, #f0f4f8 100%);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.vocab-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s;
+    z-index: 1;
+}
+
+.vocab-card:hover::before {
+    left: 100%;
+}
+
+.vocab-card:hover {
+    transform: translateY(-12px) scale(1.02);
+    box-shadow: 0 30px 60px rgba(102, 126, 234, 0.2);
+    border-color: #667eea;
+}
+
+.vocab-card .card-badge {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.vocab-card h4 {
+    color: #667eea;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    position: relative;
+    z-index: 2;
+}
+
+.vocab-card .card-subtitle {
+    color: #8b5cf6;
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 1rem 0;
+    position: relative;
+    z-index: 2;
+}
+
+.vocab-card p {
+    color: #475569;
+    margin: 0 0 1rem 0;
+    flex-grow: 1;
+    position: relative;
+    z-index: 2;
+}
+
+.vocab-card .button {
+    width: 100%;
+    position: relative;
+    z-index: 2;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,788 @@
+{% extends 'trainer/base.html' %}
+{% block content %}
+
+<div class="mcq-wrapper">
+
+  <!-- Progress bar -->
+  <div class="mcq-progress-bar">
+    <div class="mcq-progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <!-- Header bar -->
+  <div class="mcq-header">
+    <a href="{% url 'trainer:math_challenge_home' %}" class="mcq-back">← Home</a>
+    <div class="mcq-header-mid">
+      <span class="mcq-counter" id="qCounter">Q 1 / {{ question_count }}</span>
+      <span class="mcq-grade-pill">Grade {{ grade }}</span>
+    </div>
+    <div class="mcq-score-row">
+      <span class="mcq-stars-count" id="starsDisplay">⭐ 0</span>
+      <span class="mcq-streak" id="streakDisplay">🔥 {{ streak }}</span>
+    </div>
+  </div>
+
+  <!-- Stars track -->
+  <div class="mcq-stars-track" id="starsTrack"></div>
+
+  <!-- Quiz layout: problem + buddy -->
+  <div class="mcq-layout" id="quizLayout">
+
+    <!-- LEFT: Problem card -->
+    <div class="mcq-problem-card" id="problemCard">
+
+      <div class="mcq-problem-meta">
+        <span class="mcq-topic-pill" id="topicPill"></span>
+        <span class="mcq-pts-badge" id="ptsBadge"></span>
+        <span class="mcq-diff-badge" id="diffBadge"></span>
+      </div>
+
+      <!-- Question text -->
+      <div class="mcq-question" id="questionText"></div>
+
+      <!-- Problem image (if any) -->
+      <div id="imgArea" style="display:none">
+        <img id="problemImg" src="" alt="Problem diagram" class="mcq-img" />
+      </div>
+
+      <!-- MCQ options (2×2 grid) -->
+      <div class="mcq-options-grid" id="optionsGrid"></div>
+
+      <!-- Open-ended input -->
+      <div id="openArea" style="display:none">
+        <input type="text" id="openInput" class="mcq-open-input" placeholder="Type your answer…" autocomplete="off" />
+      </div>
+
+      <!-- Action buttons -->
+      <div class="mcq-actions" id="actionBtns">
+        <button class="btn-hint" id="hintBtn" onclick="showHint()">💡 Hint</button>
+        <button class="btn-submit" id="submitBtn" onclick="submitAnswer()">Check Answer ✓</button>
+      </div>
+
+      <!-- Feedback -->
+      <div class="mcq-feedback" id="feedbackPanel" style="display:none">
+        <div class="feedback-icon" id="feedbackIcon"></div>
+        <div class="feedback-msg" id="feedbackMsg"></div>
+        <div class="correct-ans-box" id="correctAnsBox" style="display:none"></div>
+      </div>
+
+      <!-- Explanation reveal -->
+      <div class="mcq-explain-section" id="explainSection" style="display:none">
+        <div class="explain-steps-list" id="stepsList"></div>
+        <div class="explain-btns">
+          <button class="btn-next-step" id="nextStepBtn" onclick="showNextStep()">Show Next Step →</button>
+          <button class="btn-all-steps" id="allStepsBtn" onclick="showAllSteps()">Show All Steps</button>
+        </div>
+        <div class="key-concept-box" id="keyConcept" style="display:none"></div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="mcq-nav-row" id="navRow" style="display:none">
+        <button class="btn-next-q" id="nextQBtn" onclick="nextQuestion()">Next Question →</button>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Math Buddy -->
+    <div class="mcq-buddy-panel" id="buddyPanel">
+      <div class="buddy-avatar" id="buddyAvatar">🤖</div>
+      <div class="buddy-name">Math Buddy</div>
+      <div class="buddy-bubble" id="buddyBubble">
+        <span id="buddyText">Ready to solve some maths? Let's go! 🚀</span>
+      </div>
+      <button class="btn-ai-explain" id="aiExplainBtn" onclick="loadAIExplain()" style="display:none">
+        🤖 AI Step-by-Step
+      </button>
+      <div class="ai-explain-box" id="aiExplainBox" style="display:none"></div>
+    </div>
+
+  </div><!-- end mcq-layout -->
+
+  <!-- Results screen -->
+  <div class="mcq-results" id="resultsScreen" style="display:none">
+    <div id="confettiCanvas"></div>
+    <div class="results-trophy" id="resultsTrophy">🏆</div>
+    <h2 class="results-title" id="resultsTitle">Quiz Complete!</h2>
+    <p class="results-score" id="resultsScore"></p>
+    <div class="results-stars" id="resultsStars"></div>
+    <div class="results-actions">
+      <a href="{% url 'trainer:math_challenge_quiz_grade' grade %}" class="btn-retry">Play Again 🔄</a>
+      <a href="{% url 'trainer:math_challenge_home' %}" class="btn-home">Home 🏠</a>
+    </div>
+  </div>
+
+</div><!-- end mcq-wrapper -->
+
+<!-- canvas-confetti CDN -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+<script>
+const QUESTIONS = {{ questions_json|safe }};
+const GRADE = {{ grade }};
+const TOTAL = QUESTIONS.length;
+
+let current = 0;
+let starsEarned = new Array(TOTAL).fill(false);
+let score = 0;
+let streak = {{ streak }};
+let stepsShown = 0;
+let submitted = false;
+let selectedOption = null;
+
+// ── Init stars track ────────────────────────────────────────────────────────
+function initStarsTrack() {
+  const track = document.getElementById('starsTrack');
+  track.innerHTML = '';
+  for (let i = 0; i < TOTAL; i++) {
+    const s = document.createElement('span');
+    s.className = 'star-dot';
+    s.id = 'star-' + i;
+    s.textContent = '☆';
+    track.appendChild(s);
+  }
+}
+
+// ── Buddy messages ──────────────────────────────────────────────────────────
+const IDLE_MSGS = [
+  "Read each clue carefully. You've got this! 💪",
+  "Take your time. Think before you click! 🤔",
+  "Maths is a superpower. Let's use it! ⚡",
+  "Break the problem into smaller pieces! 🧩",
+];
+const HINT_MSGS = [
+  "Here's your hint — use it wisely! 👀",
+  "Hint unlocked! Now give it your best shot! 🗝️",
+];
+const CORRECT_MSGS = [
+  "Brilliant! You nailed it! 🌟",
+  "Excellent work! Keep it up! 🎉",
+  "Perfect! You're on a roll! 🚀",
+  "Amazing! That was clever! 🧠",
+];
+const WRONG_MSGS = [
+  "Not quite — let's learn from this! 📚",
+  "Good try! Check the explanation below. 💡",
+  "Every mistake is a lesson. Let's grow! 🌱",
+];
+
+function setBuddy(state, customMsg) {
+  const avatars = { idle:'🤖', hint:'💡', correct:'🎉', wrong:'😅', think:'🤔' };
+  document.getElementById('buddyAvatar').textContent = avatars[state] || '🤖';
+  const pool = {
+    idle: IDLE_MSGS,
+    hint: HINT_MSGS,
+    correct: CORRECT_MSGS,
+    wrong: WRONG_MSGS,
+  }[state] || IDLE_MSGS;
+  const msg = customMsg || pool[Math.floor(Math.random() * pool.length)];
+  typewrite('buddyText', msg);
+}
+
+function typewrite(elId, text) {
+  const el = document.getElementById(elId);
+  el.textContent = '';
+  let i = 0;
+  const timer = setInterval(() => {
+    if (i >= text.length) { clearInterval(timer); return; }
+    el.textContent += text[i++];
+  }, 15);
+}
+
+// ── Render question ─────────────────────────────────────────────────────────
+function renderQuestion() {
+  if (current >= TOTAL) { showResults(); return; }
+  const q = QUESTIONS[current];
+  submitted = false;
+  selectedOption = null;
+  stepsShown = 0;
+
+  // Update header
+  document.getElementById('progressFill').style.width = Math.round((current/TOTAL)*100) + '%';
+  document.getElementById('qCounter').textContent = `Q ${current+1} / ${TOTAL}`;
+  document.getElementById('topicPill').textContent = q.topic || 'Math';
+  document.getElementById('ptsBadge').textContent = q.points ? `${q.points} pt${q.points>1?'s':''}` : '';
+  document.getElementById('diffBadge').textContent = q.difficulty === 'olympiad' ? '⭐ Olympiad' : '';
+  document.getElementById('diffBadge').style.display = q.difficulty === 'olympiad' ? '' : 'none';
+
+  // Question text (preserve newlines)
+  const qtEl = document.getElementById('questionText');
+  qtEl.innerHTML = (q.question || '').replace(/\n/g, '<br>');
+
+  // Image
+  const imgArea = document.getElementById('imgArea');
+  if (q.image) {
+    document.getElementById('problemImg').src = '/static/trainer/' + q.image;
+    imgArea.style.display = 'block';
+  } else {
+    imgArea.style.display = 'none';
+  }
+
+  // Reset UI
+  document.getElementById('feedbackPanel').style.display = 'none';
+  document.getElementById('explainSection').style.display = 'none';
+  document.getElementById('navRow').style.display = 'none';
+  document.getElementById('keyConcept').style.display = 'none';
+  document.getElementById('correctAnsBox').style.display = 'none';
+  document.getElementById('aiExplainBtn').style.display = 'none';
+  document.getElementById('aiExplainBox').style.display = 'none';
+  document.getElementById('submitBtn').disabled = false;
+  document.getElementById('hintBtn').disabled = false;
+  document.getElementById('hintBtn').textContent = '💡 Hint';
+  document.getElementById('stepsList').innerHTML = '';
+
+  const optGrid = document.getElementById('optionsGrid');
+  const openArea = document.getElementById('openArea');
+  optGrid.innerHTML = '';
+
+  if (q.type === 'mcq' && q.options) {
+    openArea.style.display = 'none';
+    optGrid.style.display = 'grid';
+    Object.entries(q.options).forEach(([key, val]) => {
+      const btn = document.createElement('button');
+      btn.className = 'opt-btn';
+      btn.dataset.key = key;
+      btn.innerHTML = `<span class="opt-key">${key}</span><span class="opt-val">${val}</span>`;
+      btn.onclick = () => selectOption(btn, key);
+      optGrid.appendChild(btn);
+    });
+  } else {
+    optGrid.style.display = 'none';
+    openArea.style.display = 'block';
+    const inp = document.getElementById('openInput');
+    inp.value = '';
+    inp.className = 'mcq-open-input';
+    inp.disabled = false;
+    inp.focus();
+    inp.onkeydown = e => { if (e.key === 'Enter') submitAnswer(); };
+  }
+
+  setBuddy('idle');
+}
+
+function selectOption(btn, key) {
+  if (submitted) return;
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedOption = key;
+}
+
+// ── Hint ────────────────────────────────────────────────────────────────────
+async function showHint() {
+  const q = QUESTIONS[current];
+  const btn = document.getElementById('hintBtn');
+
+  // Show inline hint from data if available
+  if (q.hint) {
+    setBuddy('hint', '💡 ' + q.hint);
+    btn.textContent = '💡 Hint shown';
+    btn.disabled = true;
+    return;
+  }
+
+  // Fallback to AI hint
+  btn.disabled = true;
+  btn.textContent = '💡 Loading…';
+  setBuddy('think', 'Let me think of a good hint… 🤔');
+  try {
+    const r = await fetch('/api/mc/hint/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ question: q.question, topic: q.topic, grade: GRADE })
+    });
+    const d = await r.json();
+    setBuddy('hint', '💡 ' + (d.hint || 'Think carefully!'));
+  } catch(e) {
+    setBuddy('hint', '💡 Break the problem into smaller steps!');
+  }
+  btn.textContent = '💡 Hint shown';
+}
+
+// ── Submit ───────────────────────────────────────────────────────────────────
+async function submitAnswer() {
+  if (submitted) return;
+  const q = QUESTIONS[current];
+  let userAnswer = '';
+
+  if (q.type === 'mcq') {
+    if (!selectedOption) { shake(document.getElementById('problemCard')); return; }
+    userAnswer = selectedOption;
+  } else {
+    userAnswer = document.getElementById('openInput').value.trim();
+    if (!userAnswer) { shake(document.getElementById('openInput')); return; }
+  }
+
+  submitted = true;
+  document.getElementById('submitBtn').disabled = true;
+
+  const r = await fetch('/api/mc/submit/', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      question_id: q.id,
+      answer: userAnswer,
+      correct_answer: q.answer || '',
+      question: q.question,
+      topic: q.topic,
+      grade: GRADE,
+    })
+  });
+  const data = await r.json();
+  streak = data.streak;
+  document.getElementById('streakDisplay').textContent = '🔥 ' + streak;
+
+  const isCorrect = data.correct;
+  if (isCorrect) {
+    score++;
+    starsEarned[current] = true;
+    document.getElementById('star-' + current).textContent = '⭐';
+    document.getElementById('star-' + current).classList.add('star-earned');
+    document.getElementById('starsDisplay').textContent = '⭐ ' + score;
+    if (streak >= 3) launchMiniConfetti();
+  }
+
+  // Color options / input
+  if (q.type === 'mcq') {
+    document.querySelectorAll('.opt-btn').forEach(btn => {
+      const k = btn.dataset.key;
+      btn.classList.remove('selected');
+      if (k === data.correct_answer) btn.classList.add('opt-correct');
+      else if (k === userAnswer && !isCorrect) btn.classList.add('opt-wrong');
+    });
+  } else {
+    const inp = document.getElementById('openInput');
+    inp.classList.add(isCorrect ? 'input-correct' : 'input-wrong');
+    inp.disabled = true;
+  }
+
+  // Feedback
+  const fp = document.getElementById('feedbackPanel');
+  fp.style.display = 'flex';
+  fp.className = 'mcq-feedback ' + (isCorrect ? 'fb-correct' : 'fb-wrong');
+  document.getElementById('feedbackIcon').textContent = isCorrect ? '🎉' : '😅';
+  document.getElementById('feedbackMsg').textContent = isCorrect
+    ? CORRECT_MSGS[Math.floor(Math.random()*CORRECT_MSGS.length)]
+    : WRONG_MSGS[Math.floor(Math.random()*WRONG_MSGS.length)];
+
+  if (!isCorrect && data.correct_answer) {
+    const box = document.getElementById('correctAnsBox');
+    box.textContent = '✅ Correct answer: ' + data.correct_answer;
+    box.style.display = 'block';
+  }
+
+  setBuddy(isCorrect ? 'correct' : 'wrong');
+
+  // Show explanation if steps available
+  if (q.steps && q.steps.length) {
+    document.getElementById('explainSection').style.display = 'block';
+    showNextStep();
+  }
+  document.getElementById('aiExplainBtn').style.display = 'block';
+  document.getElementById('navRow').style.display = 'flex';
+}
+
+// ── Explanation steps ────────────────────────────────────────────────────────
+function showNextStep() {
+  const q = QUESTIONS[current];
+  if (!q.steps) return;
+  const list = document.getElementById('stepsList');
+
+  if (stepsShown < q.steps.length) {
+    const item = document.createElement('div');
+    item.className = 'step-item step-new';
+    item.innerHTML = `<span class="step-num">Step ${stepsShown+1}</span><span class="step-txt">${q.steps[stepsShown].replace(/\n/g,'<br>')}</span>`;
+    list.appendChild(item);
+    stepsShown++;
+    // Remove animation class after it plays
+    setTimeout(() => item.classList.remove('step-new'), 600);
+  }
+
+  if (stepsShown >= q.steps.length) {
+    document.getElementById('nextStepBtn').style.display = 'none';
+    document.getElementById('allStepsBtn').style.display = 'none';
+    if (q.key_concept) {
+      const kc = document.getElementById('keyConcept');
+      kc.innerHTML = '🔑 <strong>Key Concept:</strong> ' + q.key_concept;
+      kc.style.display = 'block';
+    }
+  }
+}
+
+function showAllSteps() {
+  const q = QUESTIONS[current];
+  if (!q.steps) return;
+  const list = document.getElementById('stepsList');
+  list.innerHTML = '';
+  q.steps.forEach((s, i) => {
+    const item = document.createElement('div');
+    item.className = 'step-item';
+    item.innerHTML = `<span class="step-num">Step ${i+1}</span><span class="step-txt">${s.replace(/\n/g,'<br>')}</span>`;
+    list.appendChild(item);
+  });
+  stepsShown = q.steps.length;
+  document.getElementById('nextStepBtn').style.display = 'none';
+  document.getElementById('allStepsBtn').style.display = 'none';
+  if (q.key_concept) {
+    const kc = document.getElementById('keyConcept');
+    kc.innerHTML = '🔑 <strong>Key Concept:</strong> ' + q.key_concept;
+    kc.style.display = 'block';
+  }
+}
+
+// ── AI Step-by-step ──────────────────────────────────────────────────────────
+async function loadAIExplain() {
+  const q = QUESTIONS[current];
+  const btn = document.getElementById('aiExplainBtn');
+  btn.disabled = true;
+  btn.textContent = '🤖 Thinking…';
+  setBuddy('think', 'Let me prepare a full explanation for you! 🧠');
+  const box = document.getElementById('aiExplainBox');
+  box.style.display = 'block';
+  box.innerHTML = '<em>Loading…</em>';
+  try {
+    const r = await fetch('/api/mc/explain/', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ question: q.question, topic: q.topic, grade: GRADE, user_answer: '' })
+    });
+    const d = await r.json();
+    box.innerHTML = renderMarkdown(d.explanation || 'No explanation available.');
+    setBuddy('idle', 'Here is the full AI explanation! Read each step carefully. 📖');
+  } catch(e) {
+    box.innerHTML = '<em>AI is taking a break. Try again!</em>';
+  }
+  btn.textContent = '🤖 AI Explained';
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function nextQuestion() {
+  current++;
+  renderQuestion();
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
+
+// ── Results ───────────────────────────────────────────────────────────────────
+function showResults() {
+  document.getElementById('quizLayout').style.display = 'none';
+  document.getElementById('progressFill').style.width = '100%';
+  const screen = document.getElementById('resultsScreen');
+  screen.style.display = 'flex';
+
+  const pct = Math.round((score / TOTAL) * 100);
+  const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '💪' : '📚';
+  const msg = pct >= 90 ? 'Outstanding!' : pct >= 70 ? 'Great job!' : pct >= 50 ? 'Good effort!' : 'Keep practising!';
+  document.getElementById('resultsTrophy').textContent = emoji;
+  document.getElementById('resultsTitle').textContent = msg;
+  document.getElementById('resultsScore').textContent = `${score} / ${TOTAL} correct (${pct}%)`;
+
+  // 5-star rating
+  const starCount = pct >= 90 ? 5 : pct >= 70 ? 4 : pct >= 50 ? 3 : pct >= 30 ? 2 : 1;
+  document.getElementById('resultsStars').textContent = '⭐'.repeat(starCount) + '☆'.repeat(5 - starCount);
+
+  // Confetti burst
+  if (typeof confetti !== 'undefined' && pct >= 50) {
+    confetti({ particleCount: 180, spread: 80, origin: { y: 0.4 }, colors: ['#ff6b35','#4ecdc4','#ffe66d','#2ecc71','#667eea'] });
+    setTimeout(() => confetti({ particleCount: 100, angle: 60, spread: 55, origin: {x:0} }), 400);
+    setTimeout(() => confetti({ particleCount: 100, angle: 120, spread: 55, origin: {x:1} }), 600);
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function shake(el) {
+  el.classList.add('shake');
+  setTimeout(() => el.classList.remove('shake'), 500);
+}
+
+function launchMiniConfetti() {
+  if (typeof confetti !== 'undefined') {
+    confetti({ particleCount: 40, spread: 60, origin: { y: 0.6 }, scalar: 0.8 });
+  }
+}
+
+function renderMarkdown(text) {
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/📝\s+\*\*(.+?)\*\*/g, '<div class="ai-step-label">📝 <strong>$1</strong></div>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+// ── Start ─────────────────────────────────────────────────────────────────────
+initStarsTrack();
+renderQuestion();
+</script>
+
+<style>
+/* ── Layout ── */
+main.container { padding-top: 0.5rem; }
+.mcq-wrapper { max-width: 900px; margin: 0 auto; padding-bottom: 3rem; }
+
+.mcq-progress-bar {
+  height: 6px; background: #e2e8f0; border-radius: 999px;
+  margin-bottom: 1rem; overflow: hidden;
+}
+.mcq-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff6b35, #f59e0b, #10b981);
+  border-radius: 999px; transition: width 0.4s ease;
+}
+
+.mcq-header {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+}
+.mcq-back { color: #2563eb; font-weight: 700; text-decoration: none; font-size: 0.9rem; }
+.mcq-back:hover { text-decoration: underline; }
+.mcq-header-mid { display: flex; align-items: center; gap: 0.5rem; }
+.mcq-counter { font-size: 0.85rem; color: #64748b; font-weight: 700; }
+.mcq-grade-pill {
+  background: #eff6ff; color: #1d4ed8; padding: 0.2rem 0.6rem;
+  border-radius: 999px; font-size: 0.75rem; font-weight: 800;
+}
+.mcq-score-row { display: flex; gap: 0.4rem; }
+.mcq-stars-count, .mcq-streak {
+  background: #1e293b; color: white;
+  padding: 0.2rem 0.65rem; border-radius: 999px;
+  font-size: 0.8rem; font-weight: 800;
+}
+.mcq-streak { background: linear-gradient(135deg, #ff6b35, #f59e0b); }
+
+/* Stars track */
+.mcq-stars-track {
+  display: flex; gap: 3px; flex-wrap: wrap;
+  margin-bottom: 1rem; justify-content: center;
+}
+.star-dot {
+  font-size: 1rem; opacity: 0.4; transition: all 0.3s;
+  cursor: default;
+}
+.star-earned { opacity: 1; transform: scale(1.2); }
+
+/* ── Main 2-col layout ── */
+.mcq-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 1.25rem;
+  align-items: start;
+}
+@media (max-width: 700px) {
+  .mcq-layout { grid-template-columns: 1fr; }
+  .mcq-buddy-panel { order: -1; }
+}
+
+/* ── Problem card ── */
+.mcq-problem-card {
+  background: white; border: 2px solid #e2e8f0; border-radius: 1.5rem;
+  padding: 1.5rem; box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+}
+
+.mcq-problem-meta { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+.mcq-topic-pill {
+  background: #fff3e0; color: #e65100; padding: 0.2rem 0.75rem;
+  border-radius: 999px; font-size: 0.78rem; font-weight: 800;
+}
+.mcq-pts-badge {
+  background: #fef9c3; color: #78350f; padding: 0.2rem 0.6rem;
+  border-radius: 999px; font-size: 0.75rem; font-weight: 800;
+}
+.mcq-diff-badge {
+  background: #fce7f3; color: #831843; padding: 0.2rem 0.6rem;
+  border-radius: 999px; font-size: 0.75rem; font-weight: 800;
+}
+
+.mcq-question {
+  font-size: 1.15rem; font-weight: 700; color: #0f172a;
+  line-height: 1.6; margin-bottom: 1.25rem;
+  white-space: pre-wrap; font-family: 'Courier New', monospace;
+  background: #f8fafc; border-radius: 0.75rem; padding: 0.85rem 1rem;
+  border-left: 4px solid #ff6b35;
+}
+
+.mcq-img {
+  max-width: 100%; max-height: 220px; object-fit: contain;
+  border-radius: 0.75rem; margin-bottom: 1rem;
+  border: 1.5px solid #e2e8f0;
+}
+
+/* ── Options grid ── */
+.mcq-options-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0.6rem; margin-bottom: 1rem;
+}
+.opt-btn {
+  background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 0.85rem;
+  padding: 0.7rem 0.9rem; display: flex; align-items: center; gap: 0.65rem;
+  cursor: pointer; transition: all 0.15s; text-align: left;
+}
+.opt-btn:hover { border-color: #ff6b35; background: #fff7ed; transform: translateY(-1px); }
+.opt-btn.selected { border-color: #ff6b35; background: #fff3e0; box-shadow: 0 0 0 3px rgba(255,107,53,0.18); }
+.opt-btn.opt-correct { border-color: #10b981; background: #dcfce7 !important; }
+.opt-btn.opt-wrong   { border-color: #ef4444; background: #fee2e2 !important; }
+.opt-key {
+  background: #2c3e50; color: white; border-radius: 0.4rem;
+  padding: 0.15rem 0.5rem; font-size: 0.75rem; font-weight: 800; flex-shrink: 0;
+}
+.opt-btn.opt-correct .opt-key { background: #059669; }
+.opt-btn.opt-wrong   .opt-key { background: #dc2626; }
+.opt-val { color: #1e293b; font-weight: 600; font-size: 0.92rem; line-height: 1.3; }
+
+/* ── Open input ── */
+.mcq-open-input {
+  width: 100%; border: 2px solid #e2e8f0; border-radius: 0.85rem;
+  padding: 0.85rem 1.1rem; font-size: 1.1rem; font-weight: 700; color: #0f172a;
+  outline: none; transition: border-color 0.15s; margin-bottom: 1rem; box-sizing: border-box;
+}
+.mcq-open-input:focus { border-color: #ff6b35; box-shadow: 0 0 0 3px rgba(255,107,53,0.15); }
+.mcq-open-input.input-correct { border-color: #10b981; background: #dcfce7; }
+.mcq-open-input.input-wrong   { border-color: #ef4444; background: #fee2e2; }
+
+/* ── Action buttons ── */
+.mcq-actions { display: flex; gap: 0.75rem; margin-bottom: 0.75rem; }
+.btn-hint {
+  flex: 1; background: white; border: 2px solid #f59e0b; color: #92400e;
+  padding: 0.65rem 0.75rem; border-radius: 0.75rem; font-weight: 800;
+  font-size: 0.9rem; cursor: pointer; transition: all 0.15s;
+}
+.btn-hint:hover:not(:disabled) { background: #fef9c3; }
+.btn-hint:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-submit {
+  flex: 2; background: linear-gradient(135deg, #ff6b35, #e55a2b); color: white;
+  border: none; padding: 0.7rem 1rem; border-radius: 0.75rem; font-weight: 800;
+  font-size: 1rem; cursor: pointer; transition: all 0.15s;
+}
+.btn-submit:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(255,107,53,0.35); }
+.btn-submit:disabled { opacity: 0.55; cursor: not-allowed; }
+
+/* ── Feedback ── */
+.mcq-feedback {
+  border-radius: 0.85rem; padding: 0.9rem 1.1rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+  border: 2px solid transparent; margin-bottom: 0.75rem;
+}
+.fb-correct { background: #f0fdf4; border-color: #86efac; }
+.fb-wrong   { background: #fff7ed; border-color: #fdba74; }
+.feedback-icon { font-size: 1.75rem; text-align: center; }
+.feedback-msg { font-size: 0.95rem; font-weight: 700; color: #0f172a; text-align: center; }
+.correct-ans-box {
+  background: white; border-radius: 0.5rem; padding: 0.45rem 0.75rem;
+  font-weight: 700; color: #166534; font-size: 0.88rem;
+}
+
+/* ── Explanation steps ── */
+.mcq-explain-section {
+  border-top: 1.5px dashed #e2e8f0; padding-top: 0.85rem; margin-top: 0.5rem;
+}
+.explain-steps-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.75rem; }
+.step-item {
+  background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 0.75rem;
+  padding: 0.6rem 0.85rem; display: flex; gap: 0.65rem; align-items: flex-start;
+}
+.step-item.step-new { animation: stepSlideIn 0.4s ease; }
+@keyframes stepSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.step-num {
+  background: #0369a1; color: white; border-radius: 0.4rem;
+  padding: 0.1rem 0.5rem; font-size: 0.7rem; font-weight: 800; flex-shrink: 0;
+  align-self: flex-start; margin-top: 2px;
+}
+.step-txt { font-size: 0.88rem; color: #0c4a6e; font-weight: 600; line-height: 1.5; }
+
+.explain-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.65rem; }
+.btn-next-step {
+  background: #0369a1; color: white; border: none; border-radius: 0.65rem;
+  padding: 0.45rem 0.9rem; font-weight: 800; font-size: 0.82rem; cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-next-step:hover { background: #0284c7; }
+.btn-all-steps {
+  background: white; border: 1.5px solid #0369a1; color: #0369a1;
+  border-radius: 0.65rem; padding: 0.45rem 0.9rem; font-weight: 700;
+  font-size: 0.82rem; cursor: pointer; transition: all 0.15s;
+}
+.btn-all-steps:hover { background: #f0f9ff; }
+
+.key-concept-box {
+  background: linear-gradient(135deg, #fef9c3, #fefce8);
+  border: 2px solid #fbbf24; border-radius: 0.75rem;
+  padding: 0.7rem 0.9rem; font-size: 0.88rem; color: #78350f; line-height: 1.5;
+}
+
+/* ── Nav row ── */
+.mcq-nav-row { display: flex; justify-content: flex-end; margin-top: 0.75rem; }
+.btn-next-q {
+  background: linear-gradient(135deg, #10b981, #059669); color: white;
+  border: none; padding: 0.65rem 1.5rem; border-radius: 0.75rem;
+  font-weight: 800; font-size: 0.95rem; cursor: pointer; transition: all 0.15s;
+}
+.btn-next-q:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(16,185,129,0.3); }
+
+/* ── Buddy panel ── */
+.mcq-buddy-panel {
+  background: linear-gradient(160deg, #1e3a5f, #2563eb);
+  border-radius: 1.25rem; padding: 1.25rem 1rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.65rem;
+  position: sticky; top: 1rem;
+  box-shadow: 0 10px 30px rgba(37,99,235,0.25);
+}
+.buddy-avatar {
+  font-size: 3rem;
+  animation: buddyBounce 3s ease-in-out infinite;
+}
+@keyframes buddyBounce {
+  0%,100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+.buddy-name { color: rgba(255,255,255,0.7); font-size: 0.75rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.buddy-bubble {
+  background: white; border-radius: 1rem; padding: 0.75rem 1rem;
+  font-size: 0.85rem; color: #1e293b; font-weight: 600; line-height: 1.5;
+  min-height: 60px; text-align: center; width: 100%; box-sizing: border-box;
+}
+.btn-ai-explain {
+  background: rgba(255,255,255,0.15); border: 1.5px solid rgba(255,255,255,0.4);
+  color: white; border-radius: 0.65rem; padding: 0.5rem 0.75rem;
+  font-weight: 800; font-size: 0.8rem; cursor: pointer; width: 100%;
+  transition: all 0.15s;
+}
+.btn-ai-explain:hover:not(:disabled) { background: rgba(255,255,255,0.25); }
+.btn-ai-explain:disabled { opacity: 0.5; cursor: not-allowed; }
+.ai-explain-box {
+  background: rgba(255,255,255,0.95); border-radius: 0.75rem;
+  padding: 0.75rem 0.9rem; font-size: 0.8rem; color: #1e293b;
+  line-height: 1.5; width: 100%; box-sizing: border-box; max-height: 280px; overflow-y: auto;
+}
+.ai-explain-box .ai-step-label { display: block; font-weight: 700; margin: 0.4rem 0 0.1rem; color: #1d4ed8; }
+
+/* ── Results ── */
+.mcq-results {
+  background: white; border: 2px solid #e2e8f0; border-radius: 1.5rem;
+  padding: 3rem 1.5rem; text-align: center; flex-direction: column;
+  align-items: center; gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.07);
+}
+.results-trophy { font-size: 5rem; animation: trophyPop 0.6s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes trophyPop { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.results-title { font-size: 2rem; font-weight: 900; color: #0f172a; margin: 0; }
+.results-score { color: #475569; font-size: 1rem; font-weight: 700; margin: 0; }
+.results-stars { font-size: 2rem; letter-spacing: 3px; }
+.results-actions { display: flex; gap: 1rem; justify-content: center; margin-top: 0.5rem; }
+.btn-retry, .btn-home {
+  padding: 0.75rem 1.75rem; border-radius: 0.85rem; font-weight: 800; font-size: 0.95rem;
+  text-decoration: none; transition: all 0.15s;
+}
+.btn-retry { background: linear-gradient(135deg, #ff6b35, #e55a2b); color: white; }
+.btn-retry:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,107,53,0.35); }
+.btn-home { background: #f1f5f9; color: #334155; }
+.btn-home:hover { background: #e2e8f0; }
+
+/* ── Shake ── */
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60%  { transform: translateX(-6px); }
+  40%,80%  { transform: translateX(6px); }
+}
+.shake { animation: shake 0.4s ease; }
+</style>
+
+{% endblock %}

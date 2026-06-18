@@ -1,0 +1,379 @@
+{% extends 'trainer/base.html' %}
+{% block content %}
+
+<div class="ddi-wrapper">
+
+  <!-- Header -->
+  <div class="ddi-header" style="--cat-color:{{ meta.color }};--cat-bg:{{ meta.bg }}">
+    <a href="{% url 'trainer:daily_discovery_home' %}" class="ddi-back">← All Categories</a>
+    <div class="ddi-meta">
+      <span class="ddi-cat-pill">{{ meta.emoji }} {{ meta.label }}</span>
+      {% if item.tag %}<span class="ddi-tag">{{ item.tag }}</span>{% endif %}
+    </div>
+    <div class="ddi-streak">🔥 {{ streak }}-day streak</div>
+  </div>
+
+  <!-- Main Card -->
+  <div class="ddi-card" style="--cat-color:{{ meta.color }};--cat-bg:{{ meta.bg }}">
+    <div class="ddi-card-top">
+      <span class="ddi-emoji">{{ item.emoji }}</span>
+      <h2 class="ddi-title">{{ item.title }}</h2>
+      <p class="ddi-teaser">{{ item.teaser }}</p>
+    </div>
+
+    <!-- Reveal body on tap (skip for news — always show) -->
+    {% if not is_news %}
+    <div class="ddi-reveal-wrap">
+      <button class="ddi-reveal-btn" id="revealBtn">📖 Read the full discovery →</button>
+    </div>
+    {% endif %}
+
+    <div class="ddi-body-wrap" id="bodyWrap" {% if not is_news %}style="display:none"{% endif %}>
+      <div class="ddi-body" id="bodyContent">{{ item.body }}</div>
+
+      <!-- Source credit for live news -->
+      {% if is_news and item.source_url %}
+      <div class="ddi-source-bar">
+        <span class="ddi-source-tag">{{ item.tag }}</span>
+        <a href="{{ item.source_url }}" target="_blank" rel="noopener" class="ddi-source-link">
+          Read full article on {{ item.source_label }} →
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Pronounce button -->
+      <button class="ddi-speak-btn" id="speakBtn">🔊 Listen to this</button>
+
+      <!-- AI Expand button -->
+      <button class="ddi-ai-btn" id="aiBtn">🤖 Ask AI to go deeper</button>
+      <div class="ddi-ai-result" id="aiResult" style="display:none"></div>
+
+      <!-- Challenge -->
+      <div class="ddi-challenge">
+        <h4>🎯 Your Challenge</h4>
+        <p>{{ item.challenge }}</p>
+      </div>
+
+      <!-- Done button -->
+      {% if not completed %}
+      <button class="ddi-done-btn" id="doneBtn">✅ Got it! Mark as done</button>
+      {% else %}
+      <div class="ddi-already-done">✅ You completed this today!</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <div class="ddi-nav">
+    <a href="{% url 'trainer:daily_discovery_home' %}" class="button secondary">← Back to Discovery</a>
+  </div>
+
+  <!-- Badge toast -->
+  <div class="ddi-toast" id="doneToast" style="display:none">
+    <span id="toastText">✅ Discovery logged! Keep exploring.</span>
+  </div>
+
+</div>
+
+<script>
+const category  = '{{ category }}';
+const itemId    = '{{ item.id }}';
+const itemTitle = '{{ item.title|escapejs }}';
+const bodyText  = document.getElementById('bodyContent')
+                    ? document.getElementById('bodyContent').innerText : '';
+
+// Render markdown in body
+window.addEventListener('DOMContentLoaded', () => {
+  const el = document.getElementById('bodyContent');
+  if (el) el.innerHTML = renderMarkdown(el.textContent);
+});
+
+// Reveal
+document.getElementById('revealBtn').addEventListener('click', function() {
+  document.getElementById('bodyWrap').style.display = 'block';
+  this.style.display = 'none';
+});
+
+// Speak
+document.getElementById('speakBtn').addEventListener('click', function() {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const text = itemTitle + '. ' + bodyText.slice(0, 600);
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'en-US'; u.rate = 0.9;
+  window.speechSynthesis.speak(u);
+  this.textContent = '🔊 Playing…';
+  u.onend = () => { this.textContent = '🔊 Listen to this'; };
+});
+
+// AI expand
+const aiBtn = document.getElementById('aiBtn');
+if (aiBtn) {
+  aiBtn.addEventListener('click', async function() {
+    this.textContent = '🤖 Thinking…';
+    this.disabled = true;
+    const result = document.getElementById('aiResult');
+    result.style.display = 'block';
+    result.innerHTML = '<em>Loading AI explanation…</em>';
+    try {
+      const r = await fetch('/api/dd/ai-explain/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({title: itemTitle, category, item_id: itemId})
+      });
+      const d = await r.json();
+      result.innerHTML = renderMarkdown(d.explanation || 'Could not load explanation.');
+    } catch(e) {
+      result.innerHTML = '<em>AI is taking a break. Try again later.</em>';
+    }
+    this.textContent = '🤖 Ask AI to explain more';
+    this.disabled = false;
+  });
+}
+
+// Done
+const doneBtn = document.getElementById('doneBtn');
+if (doneBtn) {
+  doneBtn.addEventListener('click', async function() {
+    this.textContent = '✅ Saving…';
+    this.disabled = true;
+    try {
+      const r = await fetch('/api/dd/complete/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({category, item_id: itemId})
+      });
+      const d = await r.json();
+      const toast = document.getElementById('doneToast');
+      document.getElementById('toastText').textContent =
+        `✅ Done! ${d.completed_today}/${d.total_categories} today • 🔥 ${d.streak}-day streak`;
+      toast.style.display = 'block';
+      setTimeout(() => toast.style.display = 'none', 4000);
+      this.replaceWith(Object.assign(document.createElement('div'), {
+        className: 'ddi-already-done', textContent: '✅ Completed today!'
+      }));
+    } catch(e) {
+      this.textContent = '✅ Got it! Mark as done';
+      this.disabled = false;
+    }
+  });
+}
+</script>
+
+<style>
+main.container { padding-top: 0.75rem; }
+.ddi-wrapper { max-width: 720px; margin: 0 auto; }
+
+.ddi-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.ddi-back {
+  color: var(--cat-color, #667eea);
+  font-weight: 700;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.ddi-back:hover { text-decoration: underline; }
+
+.ddi-meta { display: flex; gap: 0.5rem; align-items: center; }
+.ddi-cat-pill {
+  background: var(--cat-bg, #ede9fe);
+  color: var(--cat-color, #4c1d95);
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.ddi-tag {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.ddi-streak {
+  background: linear-gradient(135deg, #ff6b35, #f59e0b);
+  color: white;
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+/* Main card */
+.ddi-card {
+  background: var(--cat-bg, #f8fafc);
+  border: 2px solid var(--cat-color, #667eea);
+  border-radius: 1.5rem;
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.08);
+}
+
+.ddi-card-top {
+  background: var(--cat-color, #667eea);
+  color: white;
+  padding: 1.75rem 1.5rem 1.25rem;
+  text-align: center;
+}
+.ddi-emoji  { font-size: 3.5rem; display: block; margin-bottom: 0.5rem; }
+.ddi-title  { font-size: 1.6rem; font-weight: 900; margin: 0 0 0.5rem; line-height: 1.2; }
+.ddi-teaser { font-size: 1rem; opacity: 0.9; margin: 0; font-style: italic; }
+
+/* Reveal */
+.ddi-reveal-wrap { padding: 1.25rem 1.5rem; text-align: center; }
+.ddi-reveal-btn {
+  background: white;
+  color: var(--cat-color, #667eea);
+  border: 2px solid var(--cat-color, #667eea);
+  padding: 0.65rem 1.75rem;
+  border-radius: 2rem;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ddi-reveal-btn:hover { background: var(--cat-color, #667eea); color: white; }
+
+/* Body */
+.ddi-body-wrap { padding: 0 1.5rem 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+.ddi-body {
+  background: white;
+  border-radius: 0.85rem;
+  padding: 1.1rem 1.25rem;
+  color: #1e293b;
+  font-size: 1rem;
+  line-height: 1.7;
+  border-left: 4px solid var(--cat-color, #667eea);
+}
+
+.ddi-source-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #f1f5f9;
+  border-radius: 0.6rem;
+  padding: 0.5rem 0.85rem;
+  flex-wrap: wrap;
+}
+.ddi-source-tag {
+  background: var(--cat-color, #1e3a5f);
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.ddi-source-link {
+  font-size: 0.82rem;
+  color: var(--cat-color, #1e3a5f);
+  font-weight: 600;
+  text-decoration: none;
+}
+.ddi-source-link:hover { text-decoration: underline; }
+
+.ddi-speak-btn {
+  border: 2px solid var(--cat-color, #667eea);
+  background: white;
+  color: var(--cat-color, #667eea);
+  padding: 0.45rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+.ddi-speak-btn:hover { background: var(--cat-color, #667eea); color: white; }
+
+.ddi-ai-btn {
+  border: 2px solid #8b5cf6;
+  background: white;
+  color: #8b5cf6;
+  padding: 0.45rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  align-self: flex-start;
+}
+.ddi-ai-btn:hover { background: #8b5cf6; color: white; }
+.ddi-ai-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ddi-ai-result {
+  background: #faf5ff;
+  border: 1.5px solid #c4b5fd;
+  border-radius: 0.85rem;
+  padding: 1rem 1.1rem;
+  font-size: 0.93rem;
+  color: #1e293b;
+  line-height: 1.65;
+}
+
+.ddi-challenge {
+  background: linear-gradient(135deg, #fefce8, #fef9c3);
+  border: 2px solid #fbbf24;
+  border-radius: 0.85rem;
+  padding: 0.9rem 1.1rem;
+}
+.ddi-challenge h4 { margin: 0 0 0.35rem; color: #92400e; }
+.ddi-challenge p  { margin: 0; color: #78350f; font-size: 0.95rem; font-weight: 600; }
+
+.ddi-done-btn {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+  border: none;
+  padding: 0.7rem 1.5rem;
+  border-radius: 0.85rem;
+  font-weight: 800;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ddi-done-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16,185,129,0.3); }
+.ddi-done-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.ddi-already-done {
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 700;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  text-align: center;
+}
+
+.ddi-nav {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+
+.ddi-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #667eea, #8b5cf6);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  box-shadow: 0 10px 30px rgba(102,126,234,0.4);
+  animation: slideUp 0.3s ease;
+  z-index: 999;
+  white-space: nowrap;
+}
+@keyframes slideUp {
+  from { opacity:0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity:1; transform: translateX(-50%) translateY(0); }
+}
+</style>
+{% endblock %}

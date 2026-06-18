@@ -1,0 +1,365 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+<div class="speed-wrapper">
+    <!-- Config Screen -->
+    <div id="configScreen" class="speed-screen active">
+        <div class="speed-header">
+            <h2>{{ lesson.emoji }} {{ lesson.title }}</h2>
+            <p class="level-label">Speed Test</p>
+        </div>
+
+        <div class="speed-config">
+            <div class="config-group">
+                <label>⏱ Time Limit</label>
+                <div class="config-options">
+                    <button class="config-btn active" data-time="60">1 min</button>
+                    <button class="config-btn" data-time="120">2 min</button>
+                    <button class="config-btn" data-time="180">3 min</button>
+                </div>
+            </div>
+
+            <div class="config-group">
+                <label>📝 Problem Count</label>
+                <div class="config-options">
+                    <button class="config-btn" data-count="10">10</button>
+                    <button class="config-btn active" data-count="20">20</button>
+                    <button class="config-btn" data-count="30">30</button>
+                </div>
+            </div>
+
+            <button id="startBtn" class="button speed-start-btn">🚀 Start Test</button>
+            <a href="{% url 'trainer:lesson_detail' lesson.slug %}" class="button secondary">← Back to Lesson</a>
+        </div>
+    </div>
+
+    <!-- Test Screen -->
+    <div id="testScreen" class="speed-screen">
+        <div class="speed-header">
+            <div class="problem-counter">Problem <span id="problemNum">1</span> of <span id="problemTotal">20</span></div>
+            <div class="timer-pill">⏱ <span id="timerDisplay">2:00</span></div>
+        </div>
+
+        <div class="progress-bar">
+            <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+
+        <div class="problem-card">
+            <div class="problem-display" id="problemDisplay">24 × 11 = ?</div>
+        </div>
+
+        <div class="hint-card">
+            <button class="hint-toggle" id="hintToggle">💡 Show Hint & Trick</button>
+            <div id="hintContent" class="hint-content" style="display: none;">
+                <p id="hintText" style="color: #92400e; font-weight: 600;">Loading hint...</p>
+            </div>
+        </div>
+
+        <div class="answer-display-section">
+            <label>Your Answer:</label>
+            <div class="numpad-display" id="answerDisplay">?</div>
+            <div id="answerFeedback" class="answer-feedback"></div>
+        </div>
+
+        <div class="numpad">
+            <button class="numpad-btn" data-key="1">1</button>
+            <button class="numpad-btn" data-key="2">2</button>
+            <button class="numpad-btn" data-key="3">3</button>
+            <button class="numpad-btn" data-key="4">4</button>
+            <button class="numpad-btn" data-key="5">5</button>
+            <button class="numpad-btn" data-key="6">6</button>
+            <button class="numpad-btn" data-key="7">7</button>
+            <button class="numpad-btn" data-key="8">8</button>
+            <button class="numpad-btn" data-key="9">9</button>
+            <button class="numpad-btn" id="backspaceBtn" data-key="backspace">⌫</button>
+            <button class="numpad-btn" data-key="0">0</button>
+            <button class="submit-btn" id="submitBtn">✓ Submit</button>
+        </div>
+    </div>
+
+    <!-- Results Screen -->
+    <div id="resultsScreen" class="speed-screen">
+        <div class="results-card">
+            <h2>🎉 Test Complete!</h2>
+
+            <div class="results-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Correct</div>
+                    <div class="stat-value" id="correctCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value" id="totalCount">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Accuracy</div>
+                    <div class="stat-value" id="accuracyPercent">0%</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Avg Time</div>
+                    <div class="stat-value" id="avgTime">2.0s</div>
+                </div>
+            </div>
+
+            <div class="results-buttons">
+                <button id="retryBtn" class="button">🔄 Try Again</button>
+                <a href="{% url 'trainer:lesson_detail' lesson.slug %}" class="button secondary">← Back to Lesson</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const problems = JSON.parse('{{ problems_json|escapejs }}');
+let config = {
+    timeLimit: 120,
+    problemCount: 20
+};
+
+let state = {
+    currentIndex: 0,
+    correct: 0,
+    answers: [],
+    timeRemaining: 120,
+    timerInterval: null,
+    displayedProblems: [],
+    currentAnswer: '',
+    shaking: false,
+    testStarted: false
+};
+
+const configScreen = document.getElementById('configScreen');
+const testScreen = document.getElementById('testScreen');
+const resultsScreen = document.getElementById('resultsScreen');
+
+const startBtn = document.getElementById('startBtn');
+const submitBtn = document.getElementById('submitBtn');
+const retryBtn = document.getElementById('retryBtn');
+
+document.querySelectorAll('.config-btn[data-time]').forEach(btn => {
+    btn.addEventListener('click', e => {
+        document.querySelectorAll('.config-btn[data-time]').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        config.timeLimit = parseInt(e.target.dataset.time);
+    });
+});
+
+document.querySelectorAll('.config-btn[data-count]').forEach(btn => {
+    btn.addEventListener('click', e => {
+        document.querySelectorAll('.config-btn[data-count]').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        config.problemCount = parseInt(e.target.dataset.count);
+    });
+});
+
+startBtn.addEventListener('click', () => {
+    state.displayedProblems = problems.slice(0, config.problemCount);
+    state.timeRemaining = config.timeLimit;
+    state.currentIndex = 0;
+    state.correct = 0;
+    state.answers = [];
+    state.currentAnswer = '';
+    state.testStarted = true;
+
+    configScreen.classList.remove('active');
+    testScreen.classList.add('active');
+
+    showProblem();
+    startTimer();
+});
+
+document.querySelectorAll('.numpad-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        if (state.shaking) return;
+
+        const key = btn.dataset.key;
+        if (!key) return;  // guard: submit btn has no data-key
+
+        if (key === 'backspace') {
+            state.currentAnswer = state.currentAnswer.slice(0, -1);
+        } else {
+            state.currentAnswer += key;
+        }
+        updateDisplay();
+    });
+});
+
+submitBtn.addEventListener('click', checkAnswer);
+
+document.getElementById('hintToggle').addEventListener('click', async function() {
+    const content = document.getElementById('hintContent');
+    const isHidden = content.style.display === 'none';
+
+    if (isHidden && !content.dataset.loaded) {
+        // Load hint from LLM
+        await loadHint();
+        content.dataset.loaded = 'true';
+    }
+
+    content.style.display = isHidden ? 'block' : 'none';
+    this.textContent = isHidden ? '💡 Hide Hint' : '💡 Show Hint';
+});
+
+async function loadHint() {
+    const prob = state.displayedProblems[state.currentIndex];
+    const hintText = document.getElementById('hintText');
+
+    // Fallback hints with emojis for immediate response
+    const fallbackHints = {
+        '+': '🎯 Add carefully! Break into tens first.',
+        '-': '🔢 Count UP from the smaller number!',
+        '×': '⚡ Use the multiplication shortcut!',
+        '÷': '📊 Think of equal groups!',
+    };
+
+    let hint = '💭 Break it into smaller steps!';
+    for (let op in fallbackHints) {
+        if (prob.question.includes(op)) {
+            hint = fallbackHints[op];
+            break;
+        }
+    }
+
+    // Show fallback immediately
+    hintText.innerHTML = renderMarkdown(hint);
+    hintText.style.color = '#92400e';
+
+    // Try to get LLM hint in background if API key is set
+    try {
+        const payload = {
+            question: prob.question,
+            answer: prob.answer
+        };
+
+        const response = await fetch(`/api/math-hint/`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            if (data.hint && data.hint.length > 5) {
+                hintText.innerHTML = renderMarkdown(data.hint);
+                hintText.style.color = '#92400e';
+            }
+        }
+    } catch (error) {
+        // Silently fail - fallback already shown
+    }
+}
+
+retryBtn.addEventListener('click', () => {
+    configScreen.classList.add('active');
+    testScreen.classList.remove('active');
+    resultsScreen.classList.remove('active');
+    clearInterval(state.timerInterval);
+});
+
+function showProblem() {
+    if (state.currentIndex >= state.displayedProblems.length) {
+        endTest();
+        return;
+    }
+
+    const prob = state.displayedProblems[state.currentIndex];
+    document.getElementById('problemDisplay').textContent = prob.question + ' = ?';
+    document.getElementById('problemNum').textContent = state.currentIndex + 1;
+    document.getElementById('problemTotal').textContent = state.displayedProblems.length;
+
+    state.currentAnswer = '';
+    updateDisplay();
+
+    const progress = (state.currentIndex / state.displayedProblems.length) * 100;
+    document.getElementById('progressFill').style.width = progress + '%';
+}
+
+function updateDisplay() {
+    document.getElementById('answerDisplay').textContent = state.currentAnswer || '?';
+}
+
+function checkAnswer() {
+    if (state.shaking || !state.currentAnswer) {
+        document.getElementById('answerFeedback').textContent = 'Please enter an answer first';
+        return;
+    }
+
+    const prob = state.displayedProblems[state.currentIndex];
+    const correct = state.currentAnswer === prob.answer;
+    const answerDisplay = document.getElementById('answerDisplay');
+    const feedback = document.getElementById('answerFeedback');
+
+    if (correct) {
+        state.correct++;
+        state.answers.push(true);
+
+        answerDisplay.classList.add('correct');
+        feedback.textContent = '✓ Correct!';
+        feedback.style.color = '#10b981';
+
+        setTimeout(() => {
+            state.currentIndex++;
+            answerDisplay.classList.remove('correct');
+            feedback.textContent = '';
+            showProblem();
+        }, 500);
+    } else {
+        state.answers.push(false);
+        state.shaking = true;
+
+        answerDisplay.classList.add('shake');
+        feedback.textContent = `Incorrect. Correct answer: ${prob.answer}`;
+        feedback.style.color = '#ef4444';
+
+        setTimeout(() => {
+            answerDisplay.classList.remove('shake');
+            state.shaking = false;
+            state.currentAnswer = '';
+            updateDisplay();
+            feedback.textContent = 'Try again!';
+        }, 600);
+    }
+}
+
+function startTimer() {
+    state.timerInterval = setInterval(() => {
+        state.timeRemaining--;
+        updateTimerDisplay();
+
+        if (state.timeRemaining <= 0) {
+            clearInterval(state.timerInterval);
+            endTest();
+        }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    const mins = Math.floor(state.timeRemaining / 60);
+    const secs = state.timeRemaining % 60;
+    document.getElementById('timerDisplay').textContent =
+        mins + ':' + (secs < 10 ? '0' : '') + secs;
+}
+
+function endTest() {
+    clearInterval(state.timerInterval);
+    testScreen.classList.remove('active');
+    resultsScreen.classList.add('active');
+
+    const total = state.displayedProblems.length;
+    const accuracy = Math.round((state.correct / total) * 100);
+    const avgTime = (config.timeLimit - state.timeRemaining) / total;
+
+    document.getElementById('correctCount').textContent = state.correct;
+    document.getElementById('totalCount').textContent = total;
+    document.getElementById('accuracyPercent').textContent = accuracy + '%';
+    document.getElementById('avgTime').textContent = avgTime.toFixed(1) + 's';
+}
+
+// Allow Enter key to submit
+document.addEventListener('keypress', e => {
+    if (e.key === 'Enter' && testScreen.classList.contains('active')) {
+        checkAnswer();
+    }
+});
+</script>
+{% endblock %}

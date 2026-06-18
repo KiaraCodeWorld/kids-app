@@ -1,0 +1,373 @@
+{% extends 'trainer/base.html' %}
+
+{% comment %}Distraction-free: hide the app header + bottom nav during a mission.{% endcomment %}
+{% block chrome_top %}{% endblock %}
+{% block chrome_bottom %}{% endblock %}
+{% block main_class %}dm-main{% endblock %}
+
+{% block content %}
+<div class="dm-wrapper">
+
+    <!-- Top bar: progress + mascot -->
+    <div class="dm-top">
+        <a href="{% url 'trainer:mission_home' %}" class="dm-exit" title="Exit">✕</a>
+        <div class="dm-progress">
+            <div class="dm-progress-fill" id="dmProgress" style="width:0%"></div>
+        </div>
+        <div class="dm-mascot-mini" id="dmMascotMini">{{ mascot_emoji }}</div>
+    </div>
+
+    {% if is_recovery %}
+    <div class="dm-recovery-tag">💛 Recovery Quest · bonus XP</div>
+    {% endif %}
+
+    <!-- Item stage -->
+    <div class="dm-stage" id="dmStage"><!-- JS renders here --></div>
+
+    <!-- Summary (hidden until done) -->
+    <div class="dm-summary" id="dmSummary" style="display:none"></div>
+
+</div>
+
+<script>
+const ITEMS = JSON.parse('{{ items_json|escapejs }}');
+const RECORD_ID = {{ record_id }};
+const MASCOT_EMOJI = '{{ mascot_emoji }}';
+const MASCOT_NAME = '{{ mascot_name|escapejs }}';
+
+let idx = 0;
+let results = [];
+let missionStreak = 0;   // consecutive correct within this mission
+
+const stage = document.getElementById('dmStage');
+const progress = document.getElementById('dmProgress');
+const mascotMini = document.getElementById('dmMascotMini');
+
+const ROLE_BADGE = {
+    reinforce:  { label: '💪 Warm-up', color: '#3182ce' },
+    confidence: { label: '⭐ You got this', color: '#2bd99f' },
+    fun:        { label: '🎈 Just for fun', color: '#ff5fa2' },
+};
+
+const REACT_CORRECT = ["Yes! Nailed it! 🎉","Brilliant! 🌟","You're so smart! 💡","Correct! High five! 🙌"];
+const REACT_STREAK  = ["On a roll! Keep going! 🚀","Unstoppable! 🔥","Wow, you're crushing this! ⚡"];
+const REACT_WRONG   = ["Close one! Mistakes help us learn. 🤗","Good try! Every quest makes you stronger. 🌱","That's okay — the best learners make mistakes. 💛"];
+const REACT_FUN     = ["Cool, right?! 🤩","Now you know something new! 🌟","Love learning this stuff! 💜"];
+
+function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+
+// Light prompt renderer: escape, bold (**), preserve newlines.
+function renderPrompt(text){
+    return (text||'')
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\n/g,'<br>');
+}
+
+function setProgress(){
+    progress.style.width = (idx/ITEMS.length*100) + '%';
+}
+
+function renderItem(){
+    setProgress();
+    const it = ITEMS[idx];
+    const role = ROLE_BADGE[it.role] || { label: '🎯 Challenge', color: '#7c5cff' };
+    const monoClass = it.subject === 'math' ? ' dm-mono' : '';
+
+    if (it.kind === 'mcq') {
+        stage.innerHTML = `
+        <div class="dm-card dm-anim">
+            <div class="dm-meta">
+                <span class="dm-subject">${it.emoji} ${it.subject_label}</span>
+                <span class="dm-role" style="background:${role.color}">${role.label}</span>
+            </div>
+            <h3 class="dm-title">${renderPrompt(it.title)}</h3>
+            <div class="dm-prompt${monoClass}">${renderPrompt(it.prompt)}</div>
+            <div class="dm-choices" id="dmChoices">
+                ${it.choices.map(c => `<button class="dm-choice" data-key="${c.key}">
+                    <span class="dm-choice-key">${c.key}</span>
+                    <span class="dm-choice-text">${renderPrompt(c.text)}</span>
+                </button>`).join('')}
+            </div>
+            <button class="dm-hint-btn" id="dmHintBtn">💡 Need a hint?</button>
+            <div class="dm-hint" id="dmHint" style="display:none">${renderPrompt(it.hint)}</div>
+            <div class="dm-feedback" id="dmFeedback" style="display:none"></div>
+            <button class="dm-next" id="dmNext" style="display:none">Next →</button>
+        </div>`;
+
+        const choicesBox = document.getElementById('dmChoices');
+        choicesBox.querySelectorAll('.dm-choice').forEach(btn => {
+            btn.addEventListener('click', () => answerMCQ(btn, it));
+        });
+        document.getElementById('dmHintBtn').addEventListener('click', function(){
+            document.getElementById('dmHint').style.display = 'block';
+            this.style.display = 'none';
+        });
+    } else {
+        // reveal item (fun)
+        stage.innerHTML = `
+        <div class="dm-card dm-anim">
+            <div class="dm-meta">
+                <span class="dm-subject">${it.emoji} ${it.subject_label}</span>
+                <span class="dm-role" style="background:${role.color}">${role.label}</span>
+            </div>
+            <h3 class="dm-title">${renderPrompt(it.title)}</h3>
+            <div class="dm-prompt">${renderPrompt(it.prompt)}</div>
+            <div class="dm-reveal-body">${renderPrompt(it.body)}</div>
+            ${it.fun_extra ? `<div class="dm-fun-extra">🎯 ${renderPrompt(it.fun_extra)}</div>` : ''}
+            <div class="dm-mascot-say"><span class="dm-mascot-face">${MASCOT_EMOJI}</span><span>${pick(REACT_FUN)}</span></div>
+            <button class="dm-next" id="dmNext">Got it! →</button>
+        </div>`;
+        results.push({ uid: it.uid, subject: it.subject, correct: false, gradeable: false });
+        document.getElementById('dmNext').addEventListener('click', nextItem);
+    }
+}
+
+function answerMCQ(btn, it){
+    const chosen = btn.dataset.key;
+    const correct = chosen === it.answer_key;
+    const choicesBox = document.getElementById('dmChoices');
+    choicesBox.querySelectorAll('.dm-choice').forEach(b => {
+        b.disabled = true;
+        if (b.dataset.key === it.answer_key) b.classList.add('is-correct');
+        else if (b.dataset.key === chosen) b.classList.add('is-wrong');
+    });
+    document.getElementById('dmHintBtn').style.display = 'none';
+    document.getElementById('dmHint').style.display = 'none';
+
+    missionStreak = correct ? missionStreak + 1 : 0;
+    let line;
+    if (correct) line = (missionStreak >= 2) ? pick(REACT_STREAK) : pick(REACT_CORRECT);
+    else line = pick(REACT_WRONG);
+
+    mascotMini.classList.add('pop');
+    setTimeout(()=>mascotMini.classList.remove('pop'), 600);
+
+    const fb = document.getElementById('dmFeedback');
+    fb.className = 'dm-feedback ' + (correct ? 'ok' : 'no');
+    fb.innerHTML = `
+        <div class="dm-mascot-say"><span class="dm-mascot-face">${MASCOT_EMOJI}</span><span>${line}</span></div>
+        <div class="dm-explain"><strong>${correct ? '✅ Correct!' : '📚 Here\'s the idea:'}</strong> ${renderPrompt(it.explanation)}</div>`;
+    fb.style.display = 'block';
+
+    results.push({ uid: it.uid, subject: it.subject, correct: correct, gradeable: true });
+
+    const next = document.getElementById('dmNext');
+    next.style.display = 'block';
+    next.addEventListener('click', nextItem, { once: true });
+}
+
+function nextItem(){
+    idx++;
+    if (idx < ITEMS.length) {
+        renderItem();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        finishMission();
+    }
+}
+
+async function finishMission(){
+    setProgress();
+    progress.style.width = '100%';
+    stage.style.display = 'none';
+    const summary = document.getElementById('dmSummary');
+    summary.style.display = 'block';
+    summary.innerHTML = `<div class="dm-loading">${MASCOT_EMOJI}<p>Tallying your quest...</p></div>`;
+
+    let data;
+    try {
+        const resp = await fetch('{% url "trainer:api_mission_complete" %}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ record_id: RECORD_ID, results }),
+        });
+        data = await resp.json();
+    } catch (e) {
+        summary.innerHTML = `<div class="dm-card"><h3>Quest complete! 🎉</h3>
+            <p>We couldn't save your score, but great job!</p>
+            <a href="{% url 'trainer:mission_home' %}" class="dm-next">Back home</a></div>`;
+        return;
+    }
+
+    const scorePct = data.total > 0 ? Math.round(data.score/data.total*100) : 100;
+    const xpRows = (data.xp_breakdown||[]).map(r =>
+        `<div class="dm-xp-row"><span>${r.label}</span><span>+${r.xp} XP</span></div>`).join('');
+    const badges = (data.new_badges||[]).map(b =>
+        `<div class="dm-badge-earned">${b.emoji} <strong>${b.name}</strong> — ${b.desc}</div>`).join('');
+
+    summary.innerHTML = `
+    <div class="dm-card dm-summary-card">
+        ${data.leveled_up ? `<div class="dm-levelup">🎊 LEVEL UP! 🎊<br>You're now Level ${data.level}: ${data.level_title}!</div>` : ''}
+        <div class="dm-summary-mascot">${data.mascot_emoji || MASCOT_EMOJI}</div>
+        <div class="dm-mascot-say center"><span>${data.mascot.line}</span></div>
+
+        <div class="dm-score-ring" style="--p:${scorePct}%">
+            <div class="dm-score-num">${data.score}/${data.total}</div>
+            <div class="dm-score-label">correct</div>
+        </div>
+
+        <div class="dm-xp-earned">
+            <div class="dm-xp-total">+${data.xp_earned} XP</div>
+            <div class="dm-xp-breakdown">${xpRows}</div>
+        </div>
+
+        <div class="dm-summary-stats">
+            <div class="dm-sstat"><span>🔥</span><strong>${data.streak}</strong><small>day streak</small></div>
+            <div class="dm-sstat"><span>🏅</span><strong>Lv ${data.level}</strong><small>${data.level_title}</small></div>
+            <div class="dm-sstat"><span>⭐</span><strong>${data.xp}</strong><small>total XP</small></div>
+        </div>
+
+        <div class="dm-level-bar"><div class="dm-level-fill" style="width:${data.level_percent}%"></div></div>
+        <p class="dm-level-note">${data.xp_to_next} XP to Level ${data.level+1}</p>
+
+        ${badges ? `<div class="dm-badges-earned"><h4>🏆 New Badges!</h4>${badges}</div>` : ''}
+
+        <div class="dm-summary-actions">
+            <a href="{% url 'trainer:mission_home' %}" class="dm-next">🏠 Done</a>
+            <a href="{% url 'trainer:home' %}" class="dm-next secondary">🧭 More Practice</a>
+        </div>
+    </div>`;
+
+    if (data.leveled_up || (data.new_badges||[]).length) launchConfetti();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function launchConfetti(){
+    const colors = ['#7c5cff','#ff5fa2','#ffc83d','#2bd99f','#4299e1'];
+    for (let i=0;i<60;i++){
+        const c = document.createElement('div');
+        c.className = 'dm-confetti';
+        c.style.left = Math.random()*100 + 'vw';
+        c.style.background = colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDelay = (Math.random()*0.6) + 's';
+        c.style.transform = `rotate(${Math.random()*360}deg)`;
+        document.body.appendChild(c);
+        setTimeout(()=>c.remove(), 3000);
+    }
+}
+
+// Init
+{% if already_done %}
+    document.getElementById('dmStage').innerHTML =
+        '<div class="dm-card" style="text-align:center"><div style="font-size:3rem">✅</div>' +
+        '<h3>You already finished today\\'s quest!</h3>' +
+        '<a href="{% url "trainer:mission_home" %}" class="dm-next">Back home</a></div>';
+{% else %}
+    renderItem();
+{% endif %}
+</script>
+
+<style>
+.dm-main { padding-top: calc(env(safe-area-inset-top, 0px) + 1rem) !important;
+    padding-bottom: 1.5rem !important; }
+.dm-wrapper { max-width: 600px; margin: 0 auto; }
+
+.dm-top { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.dm-exit { color: #7c5cff; background: #fff; width: 38px; height: 38px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; text-decoration: none; font-weight: 800; flex-shrink: 0;
+    box-shadow: 0 6px 16px rgba(45,42,69,0.12); }
+.dm-exit:hover { background: #f3f0ff; }
+.dm-progress { flex: 1; height: 14px; background: #e6e2f5; border-radius: 999px; overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(45,42,69,0.08); }
+.dm-progress-fill { height: 100%; background: linear-gradient(90deg,#ffc83d,#2bd99f); border-radius: 999px; transition: width .4s ease; }
+.dm-mascot-mini { font-size: 2rem; flex-shrink: 0; }
+.dm-mascot-mini.pop { animation: popBig .6s ease; }
+@keyframes popBig { 0%{transform:scale(1);} 40%{transform:scale(1.4) rotate(-10deg);} 100%{transform:scale(1);} }
+
+.dm-recovery-tag { display:inline-block; background:#fff7ed; color:#9a3412; border:2px solid #fdba74;
+    padding:.3rem .9rem; border-radius:999px; font-weight:700; font-size:.82rem; margin-bottom:.75rem; }
+
+.dm-card { background: #fff; border-radius: 1.5rem; padding: 1.75rem; box-shadow: 0 20px 50px rgba(15,23,42,0.15); }
+.dm-anim { animation: slideUp .4s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes slideUp { from { opacity:0; transform: translateY(24px) scale(.98);} to { opacity:1; transform:none; } }
+
+.dm-meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; gap:.5rem; flex-wrap:wrap; }
+.dm-subject { font-weight:800; color:#7c5cff; font-size:.95rem; }
+.dm-role { color:#fff; font-weight:800; font-size:.72rem; padding:.25rem .7rem; border-radius:999px; }
+
+.dm-title { margin: 0 0 .85rem; color:#1f2937; font-size:1.25rem; line-height:1.3; }
+.dm-prompt { color:#334155; font-size:1.05rem; line-height:1.6; margin-bottom:1.25rem; }
+.dm-prompt.dm-mono { font-family: 'Courier New', monospace; white-space: pre-wrap; background:#f8fafc; border-radius:.75rem; padding:1rem; font-size:1rem; }
+
+.dm-choices { display:grid; gap:.7rem; }
+.dm-choice { display:flex; align-items:center; gap:.85rem; text-align:left; width:100%;
+    border:2px solid #e2e8f0; background:#fff; border-radius:1rem; padding:.9rem 1rem; cursor:pointer;
+    font-size:1.02rem; transition:all .2s; }
+.dm-choice:hover:not(:disabled) { border-color:#7c5cff; background:#faf8ff; transform: translateX(4px); }
+.dm-choice:disabled { cursor: default; }
+.dm-choice-key { flex-shrink:0; width:30px; height:30px; border-radius:50%; background:#ede9fe; color:#7c5cff;
+    font-weight:800; display:flex; align-items:center; justify-content:center; font-size:.9rem; }
+.dm-choice-text { color:#334155; font-weight:600; }
+.dm-choice.is-correct { border-color:#2bd99f; background:#ecfdf5; }
+.dm-choice.is-correct .dm-choice-key { background:#2bd99f; color:#fff; }
+.dm-choice.is-wrong { border-color:#ef4444; background:#fef2f2; }
+.dm-choice.is-wrong .dm-choice-key { background:#ef4444; color:#fff; }
+
+.dm-hint-btn { margin-top:1rem; background:none; border:none; color:#f59e0b; font-weight:800; cursor:pointer; font-size:.95rem; }
+.dm-hint { margin-top:.75rem; background:linear-gradient(135deg,#fef3c7,#fde68a); border-left:4px solid #f59e0b;
+    border-radius:.6rem; padding:.85rem 1rem; color:#92400e; font-size:.95rem; line-height:1.5; }
+
+.dm-feedback { margin-top:1.25rem; border-radius:1rem; padding:1.1rem; animation: slideUp .3s ease; }
+.dm-feedback.ok { background:linear-gradient(135deg,#ecfdf5,#d1fae5); }
+.dm-feedback.no { background:linear-gradient(135deg,#fff7ed,#ffedd5); }
+.dm-explain { margin-top:.6rem; color:#334155; line-height:1.55; font-size:.95rem; }
+
+.dm-mascot-say { display:flex; align-items:center; gap:.6rem; font-weight:700; color:#5b21b6; font-size:1.05rem; }
+.dm-mascot-say.center { justify-content:center; text-align:center; }
+.dm-mascot-face { font-size:1.8rem; }
+
+.dm-reveal-body { color:#334155; line-height:1.65; font-size:1rem; background:#f8fafc; border-radius:1rem; padding:1.1rem; margin-bottom:1rem; }
+.dm-fun-extra { background:linear-gradient(135deg,#ede9fe,#ddd6fe); color:#5b21b6; border-radius:.9rem; padding:.85rem 1rem; font-weight:700; margin-bottom:1rem; }
+
+.dm-next { display:inline-block; width:100%; text-align:center; margin-top:1.25rem; border:none;
+    background:linear-gradient(135deg,#7c5cff,#ff5fa2); color:#fff; padding:1rem; border-radius:1rem;
+    font-weight:800; font-size:1.1rem; cursor:pointer; text-decoration:none; transition: transform .2s, box-shadow .2s; }
+.dm-next:hover { transform: translateY(-2px); box-shadow:0 12px 28px rgba(124,92,255,.35); }
+.dm-next.secondary { background:#f1f5f9; color:#7c5cff; margin-top:.6rem; }
+
+/* Summary */
+.dm-loading { text-align:center; font-size:3rem; padding:2rem; }
+.dm-loading p { font-size:1rem; color:#fff; font-weight:700; }
+.dm-summary-card { text-align:center; }
+.dm-levelup { background:linear-gradient(135deg,#ffc83d,#ff8e3c); color:#fff; font-weight:900; font-size:1.15rem;
+    border-radius:1rem; padding:1rem; margin-bottom:1rem; line-height:1.4; animation: popBig .6s ease; }
+.dm-summary-mascot { font-size:4.5rem; animation: mascotBob 2.5s ease-in-out infinite; }
+.dm-score-ring { position:relative; width:120px; height:120px; margin:1rem auto; border-radius:50%;
+    background:conic-gradient(#7c5cff var(--p,50%), #e2e8f0 0); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; }
+.dm-score-ring::before { content:''; position:absolute; inset:10px; background:#fff; border-radius:50%; }
+.dm-score-num { position:relative; z-index:1; font-size:1.8rem; font-weight:900; color:#7c5cff; }
+.dm-score-label { position:relative; z-index:1; font-size:.75rem; color:#64748b; font-weight:700; }
+
+.dm-xp-earned { background:#f8fafc; border-radius:1.25rem; padding:1.1rem; margin:1rem 0; }
+.dm-xp-total { font-size:2rem; font-weight:900; color:#ff8e3c; margin-bottom:.5rem; }
+.dm-xp-row { display:flex; justify-content:space-between; color:#475569; font-weight:600; font-size:.9rem; padding:.2rem 0; }
+
+.dm-summary-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; margin:1rem 0; }
+.dm-sstat { background:#f8fafc; border-radius:1rem; padding:.85rem .4rem; display:flex; flex-direction:column; gap:.1rem; }
+.dm-sstat span { font-size:1.4rem; }
+.dm-sstat strong { font-size:1.2rem; color:#7c5cff; }
+.dm-sstat small { font-size:.7rem; color:#64748b; font-weight:600; }
+
+.dm-level-bar { height:10px; background:#e2e8f0; border-radius:999px; overflow:hidden; margin-top:.5rem; }
+.dm-level-fill { height:100%; background:linear-gradient(90deg,#ffc83d,#ff8e3c); border-radius:999px; }
+.dm-level-note { color:#64748b; font-weight:700; font-size:.8rem; margin:.35rem 0 0; }
+
+.dm-badges-earned { margin-top:1.25rem; }
+.dm-badges-earned h4 { color:#7c5cff; margin:0 0 .5rem; }
+.dm-badge-earned { background:linear-gradient(135deg,#fef3c7,#fde68a); color:#92400e; border-radius:.75rem;
+    padding:.6rem 1rem; margin:.35rem 0; font-size:.9rem; }
+
+.dm-summary-actions { margin-top:1.5rem; }
+
+.dm-confetti { position:fixed; top:-10px; width:10px; height:14px; z-index:9999; border-radius:2px;
+    animation: confettiFall 2.8s ease-in forwards; }
+@keyframes confettiFall { to { top:105vh; transform: rotate(720deg); } }
+
+@media (max-width:480px){
+    .dm-card { padding:1.25rem; }
+    .dm-title { font-size:1.1rem; }
+}
+</style>
+{% endblock %}
