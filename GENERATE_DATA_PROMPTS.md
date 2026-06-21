@@ -1,5 +1,24 @@
 # Quick Data Generation Prompts
 
+You can now generate data automatically with the `generate_content` management command. See the **Automated Pipeline** section at the top of `DATA_GENERATION_GUIDE.md` for details.
+
+Quick examples:
+
+```bash
+# Generate spelling words
+python manage.py generate_content --section spelling --level Beginner --batch 20
+
+# Generate vocabulary words
+python manage.py generate_content --section vocabulary --level Intermediate --target 100
+
+# Generate Daily Discovery items
+python manage.py generate_content --section daily_discovery --category funfact --batch 10 --merge
+```
+
+You can still copy and paste the prompts below into Claude or ChatGPT if you prefer manual generation.
+
+---
+
 Copy and paste these prompts directly into Claude or ChatGPT to generate datasets.
 
 ---

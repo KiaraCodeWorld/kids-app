@@ -104,6 +104,32 @@ _d('sp015','space','🌊','Europa May Have a Hidden Ocean',
    'Europa, one of Jupiter\'s 95 moons, is covered in a thick layer of ice. But scientists believe beneath that ice lies a vast liquid ocean, kept warm by tidal heating from Jupiter\'s gravity. Where there is liquid water, there could be life. NASA\'s Europa Clipper mission, launched in 2024, is heading there to investigate. It arrives around 2030.',
    'What conditions are needed for life as we know it? Does Europa have them?',
    'Life?'),
+
+_d('sp016','space','☄️','Shooting Stars Are Not Actually Stars',
+   'A shooting star is a tiny piece of space rock burning up in Earth\'s atmosphere.',
+   'What we call shooting stars are really **meteors** — small bits of dust and rock from comets or asteroids. When they enter Earth\'s atmosphere at high speed, friction heats them until they glow brightly. Most meteors are no bigger than a grain of sand. Meteor showers happen when Earth passes through a trail of debris left by a comet. The Perseids in August are one of the best shows, with up to 100 meteors per hour.',
+   'Find out when the next meteor shower is and plan a night to watch it.',
+   'Sky Watch'),
+
+_d('sp017','space','🔴','Mars Is Red Because It Is Rusty',
+   'The Red Planet gets its color from iron oxide — the same stuff that makes rust red.',
+   'Mars\'s surface is covered in iron minerals that reacted with oxygen over billions of years, creating rust-like dust. This dust is so fine that storms can wrap the entire planet in a red haze. Beneath the dusty surface, Mars has volcanoes, canyons, and polar ice caps made of frozen water and carbon dioxide. Future missions hope to turn some of that ice into drinking water and rocket fuel.',
+   'Design a Mars habitat. What three things would you absolutely need to bring?'),
+
+_d('sp018','space','🌑','Humans Could Live on the Moon Sooner Than You Think',
+   'NASA\'s Artemis program plans to send astronauts back to the Moon by the late 2020s.',
+   'The Moon is only 384,400 km away — close enough to travel in about 3 days. Future astronauts may live in **lunar bases** built inside craters or lava tubes for protection from radiation. They would mine ice at the south pole for water and oxygen. Living on the Moon is also seen as practice for eventual missions to Mars, which is much farther and harder to reach.',
+   'Would you rather spend a month in a Moon base or a year in Antarctica? Why?'),
+
+_d('sp019','space','🌪️','Jupiter Spins Faster Than Any Other Planet',
+   'A day on Jupiter lasts only about 10 hours — the shortest of all the planets.',
+   'Jupiter is the largest planet in our solar system, but it spins incredibly fast. This rapid rotation stretches its clouds into the famous horizontal bands. The fast spin also creates strong storms, including the Great Red Spot — a storm bigger than Earth that has lasted for centuries. Jupiter has at least 95 moons, including Ganymede, the largest moon in the solar system.',
+   'If Earth had 10-hour days, how would your school schedule change?'),
+
+_d('sp020','space','🪐','Exoplanets Are Worlds Beyond Our Solar System',
+   'Scientists have discovered more than 5,500 planets orbiting other stars.',
+   'These alien worlds are called **exoplanets**. Some are giant gas planets like Jupiter; others are rocky like Earth. The **habitable zone** is the right distance from a star where liquid water could exist. Telescopes like Kepler and TESS hunt for exoplanets by watching stars dim slightly as planets pass in front of them. The James Webb Space Telescope is now studying their atmospheres for signs of water or life.',
+   'If you discovered an Earth-like planet, what would you name it?'),
 ]
 
 # ── TABLE MANNERS & LIFE ETIQUETTE ───────────────────────────────────────────
@@ -197,6 +223,31 @@ _d('mn015','manners','💬','How to Disagree Without Being Rude',
    'The framework: **1.** Acknowledge their point first — "I see why you think that." **2.** Use "I" language — "I see it differently" not "You\'re wrong." **3.** Give your reason calmly. **4.** End with curiosity — "What makes you see it that way?" This signals confidence and respect simultaneously. It is also far more persuasive than arguing.',
    'Next time you disagree with someone, use all four steps.',
    'Communication'),
+
+_d('mn016','manners','🚶','Say "Excuse Me" When You Need to Pass',
+   'Two small words make crowded hallways, buses, and rooms much more pleasant.',
+   'Saying "excuse me" acknowledges that you are briefly interrupting someone\'s space. It works when you need to walk between people, get someone\'s attention, or leave a conversation politely. Pair it with a soft touch on the shoulder if appropriate and make eye contact. This habit signals awareness and respect in busy public places.',
+   'Count how many times you say "excuse me" today. Did people respond politely?'),
+
+_d('mn017','manners','🍕','The Art of Sharing Food Fairly',
+   'Splitting a pizza or snacks fairly is a small test of generosity and math.',
+   'When sharing food, offer the first piece to someone else. If you are cutting, aim for equal portions. If there is one last piece, offer it around before taking it. In many cultures, refusing food first is polite — hosts may insist. Sharing food builds trust and connection, and being fair about it prevents arguments before they start.',
+   'Next time you share a snack, make sure everyone gets a fair portion.'),
+
+_d('mn018','manners','📩','Always RSVP to Invitations',
+   'RSVP stands for "Répondez s\'il vous plaît" — French for "please respond."',
+   'When someone invites you to a party or event, they need to know how many people are coming for food, seats, and planning. Responding promptly — even to say no — shows respect for the host\'s effort. A simple text or note works: "Thanks for inviting me. I\'d love to come!" or "I can\'t make it, but I hope it\'s wonderful."',
+   'Practice writing a polite RSVP for a pretend party invitation.'),
+
+_d('mn019','manners','👀','Do Not Point or Stare at Others',
+   'Pointing and staring can make people feel uncomfortable or judged.',
+   'It is natural to notice differences, but staring sends a message that someone is being watched or singled out. If you have a question, ask a trusted adult privately later. Similarly, pointing at people can feel accusatory. Instead, use open hand gestures or describe directions with words. This small habit helps everyone feel more comfortable in public.',
+   'Notice today: when do you feel the urge to stare? Practice looking away gently.'),
+
+_d('mn020','manners','🙌','Thank People Who Serve You',
+   'Bus drivers, cashiers, cleaners, and servers make daily life run smoothly.',
+   'A sincere "thank you" to someone helping you costs nothing but can improve their whole day. Make eye contact, smile, and use their name if they are wearing a name tag. Gratitude toward service workers teaches you to notice the effort behind everyday conveniences and treats every person with dignity.',
+   'Thank three people who help you today — a driver, a server, a cleaner, or a teacher.'),
 ]
 
 # ── FUN FACTS ─────────────────────────────────────────────────────────────────
@@ -290,6 +341,31 @@ _d('ff015','funfact','🌪️','A Bolt of Lightning Is Five Times Hotter Than th
    'A lightning bolt is an electrical discharge caused by charge separation inside a storm cloud. When it strikes, the channel heats almost instantaneously to around 30,000 K — five times the Sun\'s surface temperature. This extreme heating causes the surrounding air to expand rapidly, creating the shockwave we hear as thunder. Sound travels at 343 m/s — you can calculate how far away a strike is.',
    'If lightning is hotter than the Sun, why does the Sun feel hotter to us?',
    'Physics'),
+
+_d('ff016','funfact','🍌','Bananas Are Berries — Strawberries Are Not',
+   'Botanically, a banana qualifies as a berry, but a strawberry does not.',
+   'In botany, a **berry** is a fruit that develops from one flower with one ovary and has seeds embedded in the flesh. Bananas fit this definition. Strawberries develop from multiple ovaries and have seeds on the outside, so they are called **aggregate fruits**. Watermelons, cucumbers, and pumpkins also count as berries by the scientific definition.',
+   'Name three other foods that are technically berries.'),
+
+_d('ff017','funfact','💩','Wombat Poop Is Cube-Shaped',
+   'Wombats are the only animals known to produce cube-shaped droppings.',
+   'Scientists discovered that wombat intestines have irregular muscle contractions that shape poop into cubes. This unique shape prevents the droppings from rolling away, helping wombats mark their territory on rocks and logs. Each wombat produces up to 100 cubes per day. Researchers have studied this to understand soft-tissue engineering and even manufacturing cube-shaped objects.',
+   'Why might cube-shaped poop be useful for marking territory?'),
+
+_d('ff018','funfact','🌞','A Day on Mercury Lasts Longer Than Its Year',
+   'Mercury spins so slowly that it completes an orbit around the Sun before one full rotation.',
+   'Mercury takes 88 Earth days to orbit the Sun — that is its year. But it takes 176 Earth days to rotate once — that is its day. So a day on Mercury is about twice as long as its year! Because it has almost no atmosphere, temperatures swing wildly: 430°C during the day and -180°C at night.',
+   'Would you rather have very long days or very long nights?'),
+
+_d('ff019','funfact','🐄','Cows Have Best Friends',
+   'Cows form close social bonds with other cows and get stressed when separated.',
+   'Research from the University of Northampton found that cows have preferred companions. When kept with their best friend, they show lower heart rates and less stress. Cows are also highly social animals with complex herd dynamics. Farmers who understand this can improve animal welfare by keeping friends together.',
+   'What animal friendships have you observed?'),
+
+_d('ff020','funfact','👃','You Cannot Hum While Holding Your Nose',
+   'Try it — humming requires air to move through your nose.',
+   'When you hum, your vocal cords vibrate and create sound, but the sound escapes through your nose. If you pinch your nose shut, the airflow is blocked and the humming stops. This is a simple party trick that demonstrates how sound needs a pathway to travel. It also shows how connected your mouth, throat, and nose are for making sound.',
+   'Test this on a friend. Can they figure out why it works before you explain?'),
 ]
 
 # ── 2-MINUTE HACKS ────────────────────────────────────────────────────────────
@@ -383,6 +459,31 @@ _d('hk015','hack','🔋','Charge Your Brain With a 20-Minute Nap',
    'A short nap (10–20 minutes) reaches Stage 2 sleep — restoring alertness and motor performance without grogginess. Longer naps (30+ minutes) enter deeper sleep and cause "sleep inertia" — that heavy, confused feeling when you wake. The optimal nap: 20 minutes, ideally 6–8 hours after waking. Some researchers suggest a "nappuccino" — drink coffee, nap 20 min, wake up as caffeine kicks in.',
    'Try a 20-minute nap today. Set an alarm. Note how you feel after.',
    'Performance'),
+
+_d('hk016','hack','🍅','The Pomodoro Technique for Homework',
+   'Study for 25 minutes, rest for 5. Repeat. Your brain stays fresh longer.',
+   'Named after a tomato-shaped kitchen timer, the **Pomodoro Technique** breaks work into focused 25-minute chunks followed by short breaks. After four rounds, take a longer 15–30 minute break. This works because your brain\'s attention naturally dips after 20–30 minutes. Short breaks restore focus and prevent burnout better than one long slog.',
+   'Try one Pomodoro session on your next homework assignment.'),
+
+_d('hk017','hack','🎒','Pack Your Bag the Night Before',
+   'A 5-minute evening habit prevents morning panic.',
+   'Morning willpower is low and time is short. Packing your bag the night before removes a decision from your morning and prevents forgotten homework, lunch boxes, or gym clothes. Lay out your clothes too if possible. These small evening habits create calmer mornings and fewer family arguments.',
+   'Pack tonight\'s bag right now and list three things you would have forgotten.'),
+
+_d('hk018','hack','🧠','Use Mnemonics to Remember Lists',
+   'Turn boring lists into funny sentences and they stick in your memory.',
+   'A **mnemonic** is a memory trick. To remember the planets in order: **M**y **V**ery **E**ager **M**other **J**ust **S**erved **U**s **N**achos (Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune). The sillier the sentence, the better it sticks. You can create mnemonics for spelling, math rules, history dates, or any list.',
+   'Create a mnemonic to remember the first 8 U.S. presidents or your locker combination.'),
+
+_d('hk019','hack','🐸','Eat the Frog First',
+   'Do your hardest task first thing — everything else feels easier after.',
+   'The phrase "eat the frog" comes from a Mark Twain quote: if you eat a live frog first thing, nothing worse will happen all day. Applied to work, it means tackle your most important or dreaded task before anything else. Willpower is highest in the morning, and completing the hard thing creates momentum for the rest of the day.',
+   'What is your "frog" tomorrow? Do it before checking your phone.'),
+
+_d('hk020','hack','🤸','Stretch Between Study Sessions',
+   'Two minutes of movement resets your brain better than scrolling.',
+   'Sitting still for long periods reduces blood flow to the brain and makes you sleepy. Every 30–45 minutes, stand up, touch your toes, roll your shoulders, or do five jumping jacks. Movement increases oxygen to the brain, improves mood, and helps you retain information better than pushing through fatigue.',
+   'Set a timer and stretch for 2 minutes between every study block today.'),
 ]
 
 # ── GAMES ─────────────────────────────────────────────────────────────────────
@@ -476,6 +577,31 @@ _d('gm015','game','🎲','Pandemic — The Cooperative Strategy Game',
    '**How to play:** 2–4 players each have unique roles (Medic, Scientist, Dispatcher). Four diseases are spreading across the world map. On each turn: take 4 actions (move, treat, build, share knowledge), draw 2 player cards, then spread disease. If any disease spreads too fast — game over. Pandemic requires communication, role optimization, and strategic prioritization. It teaches systems thinking.',
    'Play Pandemic with family or friends. Debrief: what strategy worked? What did not?',
    '2–4 Players'),
+
+_d('gm016','game','👂','Simon Says — The Classic Listening Game',
+   'A simple game that trains attention, impulse control, and listening skills.',
+   '**How to play:** One player is Simon and gives commands like "Simon says touch your nose." Players must only follow commands that begin with "Simon says." If Simon gives a command without saying "Simon says" first, anyone who follows it is out. The last player standing becomes the next Simon. It is surprisingly hard — your brain wants to react automatically.',
+   'Play three rounds of Simon Says. Notice how hard it is to stop yourself.'),
+
+_d('gm017','game','👁️','I Spy — Observation on the Go',
+   'A no-equipment game perfect for car rides, waiting rooms, or classrooms.',
+   '**How to play:** One player picks an object they can see and says, "I spy with my little eye something that is..." followed by a color, shape, or first letter. Other players take turns guessing until someone identifies the object. It sharpens observation skills and vocabulary, and works anywhere you can look around.',
+   'Play I Spy during your next car ride or meal wait.'),
+
+_d('gm018','game','⬜','Hopscotch — Math and Movement Combined',
+   'Draw a grid, toss a stone, and hop your way through numbers.',
+   '**How to play:** Draw a hopscotch grid with numbered squares. Toss a small object onto a square. Hop through the grid, skipping the square with the object, then turn around and come back. You can make it harder by adding math problems: solve 7 + 5 before landing on square 12. It builds balance, coordination, and number sense at the same time.',
+   'Design your own hopscotch grid with a twist — math problems or spelling words.'),
+
+_d('gm019','game','🔤','Hangman — Word Guessing Classic',
+   'Guess the hidden word one letter at a time before the drawing is complete.',
+   '**How to play:** One player thinks of a word and draws blanks for each letter. Others guess letters one at a time. Correct letters are filled in; incorrect letters add parts to a stick-figure drawing. Guess the word before the drawing is finished. Strategy: start with common vowels (E, A, O) and consonants (T, S, R, N). Great for spelling and vocabulary practice.',
+   'Play Hangman with a friend using words from this week\'s spelling list.'),
+
+_d('gm020','game','🎵','Musical Chairs — Quick Reflexes and Laughter',
+   'Walk, music stops, grab a chair. One chair fewer than players.',
+   '**How to play:** Arrange chairs in a circle, one fewer than the number of players. Players walk around the chairs while music plays. When the music stops, everyone must sit. The player left standing is out. Remove one chair and repeat until one winner remains. It is simple, fast, and guaranteed to produce laughter. Make it educational by answering a trivia question to stay in.',
+   'Organize a Musical Chairs game with friends or family this week.'),
 ]
 
 # ── TRENDING KIDS STUFF ────────────────────────────────────────────────────────
@@ -569,6 +695,31 @@ _d('tr015','trending','📊','Why Data Literacy Is the New Literacy',
    'Every day we are shown statistics — infection rates, economic data, sports analytics, climate figures. Data literacy means understanding what a graph is actually showing, what it is NOT showing, and when numbers are being used to mislead. Common tricks: cut y-axes that exaggerate changes, percentages without base numbers, correlation presented as causation. Being data-literate makes you almost immune to manipulation.',
    'Find a graph in today\'s news. Ask: what does this NOT show? Who benefits from this framing?',
    'Critical Skill'),
+
+_d('tr016','trending','🏓','Pickleball Is Taking Over the World',
+   'A paddle sport that is easy to learn, social, and fun for all ages.',
+   'Pickleball combines elements of tennis, badminton, and ping-pong. It is played on a smaller court with a plastic ball and paddles. It has become the fastest-growing sport in many countries because it is low-impact, inexpensive, and easy for beginners. Schools, parks, and retirement communities now share courts. Professional leagues and celebrity investors are making it a serious sport too.',
+   'Try pickleball if you can. What skills from other sports help you play?'),
+
+_d('tr017','trending','💧','Reusable Water Bottles Are a Status Symbol',
+   'A simple swap became a lifestyle statement — and it helps the planet.',
+   'Brands like Stanley, Hydro Flask, and Nalgene turned reusable bottles into must-have accessories. Carrying a refillable bottle reduces single-use plastic waste and saves money. Some schools and airports now have water-bottle refill stations. The trend shows how small sustainable choices can become cool cultural symbols.',
+   'Calculate how many plastic bottles you would save in a year by using a reusable one daily.'),
+
+_d('tr018','trending','🌿','Plant Parenting Is the New Pet',
+   'Young people are growing indoor gardens and sharing them online.',
+   'Caring for houseplants has become hugely popular. Plants like pothos, succulents, and snake plants are beginner-friendly and improve indoor air quality. "Plant parents" track growth, name their plants, and troubleshoot problems on social media. Gardening reduces stress and teaches responsibility — even a single windowsill plant counts.',
+   'Start with one easy indoor plant. Research how much light and water it needs.'),
+
+_d('tr019','trending','📱','Short Educational Videos Are Changing Learning',
+   'TikTok, YouTube Shorts, and Instagram Reels now teach science, history, and languages.',
+   'Educational creators use short videos to explain complex topics in 60 seconds or less. This format makes learning feel fun and accessible. However, short videos can oversimplify. The best learners use them as a starting point and then dive deeper with books, articles, or courses. Critical thinking still matters in snack-sized content.',
+   'Find one educational short video today and fact-check one claim from it.'),
+
+_d('tr020','trending','👕','Upcycling Fashion Is Trending',
+   'Young designers turn old clothes into new styles instead of buying fast fashion.',
+   'Upcycling means transforming old or discarded items into something better. In fashion, this means cutting, dyeing, sewing, or patching old clothes into unique outfits. It fights textile waste — the fashion industry produces over 90 million tons of waste yearly. Thrifting and upcycling are now seen as creative and environmentally responsible style choices.',
+   'Design an outfit using only clothes you already own.'),
 ]
 
 # ── NEWS ──────────────────────────────────────────────────────────────────────
@@ -662,6 +813,31 @@ _d('nw015','news','🌱','Country-Sized Area of Forest Regrows Naturally in Braz
    '**What happened:** Satellite analysis published by researchers at MapBiomas found that over 4.2 million hectares of forest in Brazil spontaneously regrew between 2000 and 2023 on land that had been cleared for agriculture then abandoned. This is roughly the size of the Netherlands — without anyone planting a single tree.\n\n**Why it matters:** Natural forest regeneration is significantly cheaper than planting trees and often produces more biodiverse, resilient forest. This challenges the idea that restoring forests always requires expensive human intervention. Simply stopping deforestation and allowing nature to work is often the most powerful tool available.\n\n**What\'s next:** Scientists argue this finding should shift reforestation funding toward protecting existing regenerating forests, not just planting campaigns.',
    'Compare the cost and biodiversity of natural forest regeneration versus tree-planting programmes.',
    'Environment'),
+
+_d('nw016','news','🎒','Solar Panel Backpack Charges Student Devices',
+   'A teenage inventor created a backpack that turns sunlight into phone and laptop power.',
+   '**What happened:** A 16-year-old student in Kenya designed a backpack with flexible solar panels sewn into the fabric. It stores energy in a small battery that can charge phones, tablets, and LED lamps. He was inspired by power outages that interrupted his homework.\n\n**Why it matters:** In many parts of the world, reliable electricity is not guaranteed. A solar backpack provides portable power for studying after dark. It also reduces reliance on polluting diesel generators and kerosene lamps.\n\n**What\'s next:** The inventor is working with local manufacturers to produce affordable versions for students across rural Africa.',
+   'List three everyday objects you could power with a small solar panel.'),
+
+_d('nw017','news','🌳','Old Subway Tunnel Becomes Underground Park',
+   'A city transformed an abandoned train tunnel into a green public space.',
+   '**What happened:** Urban planners in a major European city opened a new underground park inside a disused subway tunnel. The space uses LED grow lights, hydroponic planters, and recycled rainwater to grow vegetables and flowers year-round. Locals can visit, volunteer, and even buy fresh produce.\n\n**Why it matters:** Cities often have unused underground spaces. Turning them into parks adds greenery, improves air quality, and creates community gathering places without taking up street-level land.\n\n**What\'s next:** Other cities are studying the project to see if similar tunnels, bunkers, and abandoned spaces can be reused.',
+   'What unused space in your town could be turned into something useful?'),
+
+_d('nw018','news','💧','Teen Invents Cheap Lead Detector for Tap Water',
+   'A 15-year-old created a device that warns families if their drinking water contains lead.',
+   '**What happened:** A high school student developed a small, inexpensive sensor that changes color when lead is present in water. Traditional lead tests require sending samples to a lab and cost much more. Her device can give results in minutes using materials that cost under $5.\n\n**Why it matters:** Lead in drinking water can harm brain development, especially in children. Many older pipes still contain lead, and not all communities can afford frequent testing. A cheap, fast test could help families protect themselves.\n\n**What\'s next:** The student is partnering with water safety organizations to test the device in real homes and refine it for mass production.',
+   'Why is detecting lead in water especially important for young children?'),
+
+_d('nw019','news','📚','Library on Wheels Brings Books to Remote Villages',
+   'A bicycle-powered library is delivering books to children who have no local library.',
+   '**What happened:** A teacher in a rural region converted a cargo bicycle into a mobile library. Several times a week, she pedals to different villages and lets children borrow books. The project started with just 50 donated books and has grown to over 5,000.\n\n**Why it matters:** Access to books is one of the strongest predictors of reading success and school achievement. Children in remote areas often have no library nearby. A mobile library brings stories, knowledge, and joy directly to them.\n\n**What\'s next:** The project is fundraising for electric cargo bikes and e-readers to reach even more villages.',
+   'What book would you donate to a mobile library for kids your age?'),
+
+_d('nw020','news','♻️','Young Coder Builds App to Simplify Recycling',
+   'A 14-year-old created an app that tells you exactly how to recycle any item.',
+   '**What happened:** Frustrated by confusing recycling rules, a teenager built a free app where users scan a barcode or type an item name to learn whether it is recyclable, compostable, or landfill. The app also shows the nearest recycling drop-off locations.\n\n**Why it matters:** Different cities have different recycling rules, and many people accidentally contaminate recycling bins with non-recyclable items. Clear guidance can dramatically reduce waste sent to landfills.\n\n**What\'s next:** The app is expanding to include repair guides and upcycling ideas so items stay useful longer.',
+   'Pick one item in your home and research the correct way to dispose of it locally.'),
 ]
 
 # ── Flat pool for rotation ─────────────────────────────────────────────────────

@@ -4,6 +4,60 @@ This guide explains how to create and structure data for all sections of the Bra
 
 ---
 
+## Automated Content Pipeline
+
+You can now grow datasets automatically with the LLM-backed management command `generate_content`.
+
+### Supported sections
+
+| Section | Levels / Categories | Target | File |
+|---|---|---|---|
+| Spelling | Beginner, Intermediate, Advanced, Expert | 100/level | `trainer/spelling_content.py` |
+| Vocabulary | Beginner, Intermediate, Advanced | 100/level | `trainer/spelling_content.py` |
+| Daily Discovery | space, manners, funfact, hack, game, trending, news | 100/category | `trainer/daily_discovery_content.py` |
+
+### How it works
+
+1. The command reads the existing dataset to find how many items are missing.
+2. It sends a structured JSON prompt to the configured LLM (OpenRouter `google/gemma-4-31b-it:free`).
+3. Returned items are validated for schema, duplicate IDs/words, single emoji, and kid-appropriateness.
+4. Validated items are saved to `data/generated/<section>_<timestamp>.json` for review.
+5. Use `--merge` to append reviewed items to the source Python file. A `.bak` backup is created first.
+
+### Quick commands
+
+```bash
+# Preview what would be generated (no LLM call)
+python manage.py generate_content --section spelling --level Beginner --target 100 --dry-run
+
+# Generate 20 spelling words and stage them for review
+python manage.py generate_content --section spelling --level Beginner --batch 20
+
+# Generate until a vocabulary level reaches 100 items
+python manage.py generate_content --section vocabulary --level Advanced --target 100
+
+# Generate Daily Discovery items and merge them immediately
+python manage.py generate_content --section daily_discovery --category space --batch 10 --merge
+```
+
+### Requirements
+
+- `OPENROUTER_API_KEY` must be set in your `.env` file.
+- The default model is the free `google/gemma-4-31b-it:free`. Free models can be slow or rate-limited; adjust `--sleep` and `--batch` if needed.
+- Always review the staged JSON file before merging. Run `python manage.py test trainer.tests` after merging.
+
+### Testing without an API key
+
+Use `--sample` to test the full pipeline (validation, staging, and merge) with deterministic sample data:
+
+```bash
+python manage.py generate_content --section spelling --level Beginner --batch 3 --sample --merge
+```
+
+This is useful for verifying that merge logic works before spending API credits.
+
+---
+
 ## Table of Contents
 
 1. [Spelling Bee](#spelling-bee)

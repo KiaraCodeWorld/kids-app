@@ -6,16 +6,18 @@ Use this checklist to track your progress adding datasets to Brain Quest.
 
 ## 📋 Quick Overview
 
-- [ ] Spelling Bee (4 levels × 30 words = 120 items)
-- [ ] Vocabulary (3 levels × 15 words = 45 items)
+- [ ] Spelling Bee (4 levels × 100 words = 400 items)
+- [ ] Vocabulary (3 levels × 100 words = 300 items)
 - [ ] Mental Math (8 grades × 20+ problems = 160+ items)
 - [ ] Word Explorer (3 tiers × 200 words = 600 items)
 - [ ] Idiom Island (200 items)
-- [ ] Daily Discovery (60-80 items across 5 categories)
+- [ ] Daily Discovery (7 categories × 100 items = 700 items)
 - [ ] Math Challenge (8 grades × 25+ problems = 200+ items)
 - [ ] Flashcards (Auto-populated from vocab/idioms)
 
-**Total: ~1,400+ items**
+**Total: ~2,500+ items**
+
+You can grow Spelling, Vocabulary, and Daily Discovery automatically with the `generate_content` management command. See the *Automated Pipeline* section in `DATA_GENERATION_GUIDE.md`.
 
 ---
 
@@ -24,9 +26,9 @@ Use this checklist to track your progress adding datasets to Brain Quest.
 ### ✅ Spelling Bee
 **File:** `trainer/spelling_content.py`
 
-- [ ] Use prompt from `GENERATE_DATA_PROMPTS.md`
+- [ ] Use prompt from `GENERATE_DATA_PROMPTS.md` or run `python manage.py generate_content --section spelling --level <Level> --target 100`
 - [ ] Generate 4 levels: Beginner, Intermediate, Advanced, Expert
-- [ ] 30 words per level (120 total)
+- [ ] 100 words per level (400 total)
 - [ ] Copy output into `REAL_WORDS` dict
 - [ ] Test: `python manage.py shell`
   ```python
@@ -40,9 +42,9 @@ Use this checklist to track your progress adding datasets to Brain Quest.
 ### ✅ Vocabulary
 **File:** `trainer/spelling_content.py`
 
-- [ ] Use prompt from `GENERATE_DATA_PROMPTS.md`
+- [ ] Use prompt from `GENERATE_DATA_PROMPTS.md` or run `python manage.py generate_content --section vocabulary --level <Level> --target 100`
 - [ ] Generate 3 levels: Beginner, Intermediate, Advanced
-- [ ] 15 words per level (45 total)
+- [ ] 100 words per level (300 total)
 - [ ] Each word has: word, definition, usage
 - [ ] Copy output into `VOCABULARY_WORDS` dict
 - [ ] Test: `python manage.py shell`
@@ -149,9 +151,9 @@ Use this checklist to track your progress adding datasets to Brain Quest.
 **File:** `trainer/daily_discovery_content.py`
 
 - [ ] Create file: `trainer/daily_discovery_content.py`
-- [ ] Use prompt from `GENERATE_DATA_PROMPTS.md`
-- [ ] Generate 15 items per category (60+ items)
-- [ ] Categories: Science (15), History (15), Nature (15), optionally Technology + Culture
+- [ ] Use prompt from `GENERATE_DATA_PROMPTS.md` or run `python manage.py generate_content --section daily_discovery --category <category> --target 100`
+- [ ] Generate 100 items per category (700 items)
+- [ ] Categories: space, manners, funfact, hack, game, trending, news
 - [ ] Each item: id, title, emoji, category, description, facts (list), fun_fact, sources (list)
 - [ ] Create dict: `DISCOVERY_CATEGORIES`
 - [ ] Test: `python manage.py shell`
@@ -224,13 +226,13 @@ For **each** dataset before committing:
 
 | Section | Items | Status | Notes |
 |---------|-------|--------|-------|
-| Spelling | 120 | ⬜ | 4 levels, 30 each |
-| Vocabulary | 45 | ⬜ | 3 levels, 15 each |
+| Spelling | 400 | 🟨 | 4 levels, 100 each (53-82/level so far) |
+| Vocabulary | 300 | 🟨 | 3 levels, 100 each (~25/level so far) |
 | Mental Math | 160+ | ⬜ | 8 grades, 20+ each |
-| Word Explorer | 600 | ⬜ | 3 tiers, 200 each |
-| Idioms | 200 | ⬜ | Mixed categories |
-| Daily Discovery | 60+ | ⬜ | 5 categories |
-| Math Challenge | 200+ | ⬜ | 8 grades, 25+ each |
+| Word Explorer | 600 | 🟩 | 3 tiers, 200 each |
+| Idioms | 200 | 🟩 | Mixed categories |
+| Daily Discovery | 700 | 🟨 | 7 categories, 100 each (20/level so far) |
+| Math Challenge | 200+ | 🟨 | 8 grades, 25+ each |
 
 **Key:** ⬜ = Not Started | 🟨 = In Progress | 🟩 = Complete
 
