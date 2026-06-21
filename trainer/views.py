@@ -256,18 +256,12 @@ def api_math_hint(request):
         if cached_hint:
             return JsonResponse({'hint': cached_hint, 'cached': True}, status=200)
 
-        try:
-            response = llm.client.chat.completions.create(
-                model="google/gemma-4-31b-it:free",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=100,
-            )
-
-            hint = response.choices[0].message.content.strip()
+        hint = llm._call_api(prompt, max_tokens=100)
+        if hint:
+            hint = hint.strip()
             cache.set(cache_key, hint, 60 * 60)  # Cache for 1 hour
-
             return JsonResponse({'hint': hint, 'cached': False}, status=200)
-        except Exception as e:
+        else:
             return JsonResponse({'hint': f'⚡ Smart tip: {answer} is your goal!'}, status=200)
 
     except json.JSONDecodeError:

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes" />
     <title>🦊 Brain Quest — Feel Brilliant Before Breakfast</title>
     <meta name="description" content="Daily 5-minute learning for curious kids (7-10): math, vocabulary, spelling, idioms & more. Fun, interactive, with XP & streaks!" />
@@ -29,7 +30,7 @@
             <a href="{% url 'trainer:profile_me' %}" class="profile-chip">
                 <span class="pc-avatar">{{ shell.mascot_emoji|default:"🦊" }}</span>
                 <span class="pc-text">
-                    <span class="pc-hello">Hi, {{ shell.mascot_name|default:"friend" }}!</span>
+                    <span class="pc-hello">Hi {% if user.is_authenticated %}{{ user.first_name|default:"there" }}{% else %}there{% endif %}! 👋</span>
                     <span class="pc-progress">
                         <span class="pc-bar"><span class="pc-bar-fill" style="width: {{ shell.level_percent|default:0 }}%"></span></span>
                         <span class="pc-lvl">Lv {{ shell.level|default:1 }}</span>
@@ -106,7 +107,7 @@
 <div id="install-banner" style="display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1rem 1.5rem; border-radius: 1rem; z-index: 9998; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); text-align: center; max-width: 90%;">
     <div style="font-weight: 600; margin-bottom: 0.5rem;">📱 Install Brain Quest?</div>
     <button onclick="installApp()" style="background: white; color: #7c5cff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 700; cursor: pointer; margin-right: 0.5rem;">Install</button>
-    <button onclick="this.parentElement.style.display='none'" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer;">Later</button>
+    <button onclick="markInstallPromptDismissed(); this.parentElement.style.display='none';" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer;">Later</button>
 </div>
 
 <script>
