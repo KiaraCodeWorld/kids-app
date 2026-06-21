@@ -80,8 +80,8 @@ def greet(name: str, streak: int = 0, completed_today: bool = False,
     else:
         mood = "happy"
         lines = [
-            f"{hello}! Ready to feel brilliant this {part}? 🚀",
-            f"{hello}! Let's learn something awesome. ✨",
+            f"{hello}! Ready to learn something new this {part}? 🚀",
+            f"{hello}! Let's explore something exciting. ✨",
             f"{hello}! Today's quest is waiting for you. 🎯",
         ]
     return {"mood": mood, "face": MOOD_FACE[mood], "line": random.choice(lines)}
@@ -93,15 +93,15 @@ def react_to_answer(correct: bool, streak_in_mission: int = 0) -> dict:
         mood = "celebrate" if streak_in_mission >= 2 else "happy"
         lines = [
             "Yes! Nailed it! 🎉",
-            "Brilliant! 🌟",
-            "You're so smart! 💡",
+            "You thought that through! 🌟",
+            "Great strategy! 💡",
             "Correct! High five! 🙌",
         ]
         if streak_in_mission >= 2:
             lines = [
-                f"{streak_in_mission} in a row! Unstoppable! 🔥",
+                f"{streak_in_mission} in a row! Your focus is paying off! 🔥",
                 "On a roll! Keep going! 🚀",
-                "Wow, you're crushing this! ⚡",
+                "Wow, you're building momentum! ⚡",
             ]
     else:
         mood = "encourage"
@@ -119,16 +119,16 @@ def react_to_summary(score: int, total: int, leveled_up: bool,
     """Mission-complete reaction on the summary screen."""
     if leveled_up:
         mood = "celebrate"
-        line = "LEVEL UP! You're getting smarter every day! 🎊"
+        line = "LEVEL UP! Your practice is paying off! 🎊"
     elif new_milestone:
         mood = "celebrate"
         line = f"{streak}-day streak milestone! You're a legend! 🏆"
     elif total > 0 and score == total:
         mood = "proud"
-        line = "A perfect quest! I'm so proud of you! 🥳"
+        line = "A perfect quest! Your effort really showed! 🥳"
     elif total > 0 and score >= total / 2:
         mood = "happy"
-        line = "Great quest today! You're improving fast! 🌟"
+        line = "Great quest today! You're getting stronger! 🌟"
     else:
         mood = "encourage"
         line = "You finished — that's what counts! Tomorrow we get even better. 💪"

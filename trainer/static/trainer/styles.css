@@ -1820,3 +1820,59 @@ h1, h2, h3, h4, .brand-name, .pc-hello { font-family: 'Baloo 2', 'Nunito', sans-
     35%{opacity:1;transform:scale(1.5) translateY(-12px)}
     100%{opacity:0;transform:scale(0.8) translateY(-30px)}
 }
+
+/* ── Accessibility & comfort settings ─────────────────────────────────────── */
+
+/* Reduce motion: disable animated background and mascot/transition animations */
+body.reduce-motion {
+    animation: none !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+body.reduce-motion *,
+body.reduce-motion *::before,
+body.reduce-motion *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+}
+
+/* Larger text */
+body.large-text {
+    font-size: 1.15rem;
+}
+body.large-text h1, body.large-text h2, body.large-text h3, body.large-text h4 {
+    font-size: 1.3em;
+}
+
+/* High contrast */
+body.high-contrast {
+    --primary: #4a00e0;
+    --primary-light: #6a00ff;
+    --accent: #d0006f;
+    --success: #008f5d;
+    --warning: #c26a00;
+}
+body.high-contrast .app-header,
+body.high-contrast .bottom-nav,
+body.high-contrast .level-card,
+body.high-contrast .quest-card,
+body.high-contrast .saved-word-card,
+body.high-contrast .card {
+    border: 2px solid #000;
+    box-shadow: none;
+}
+body.high-contrast a {
+    text-decoration: underline;
+}
+
+/* Dyslexia-friendly font stack */
+body.dyslexia-font {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', 'Trebuchet MS', sans-serif;
+}
+body.dyslexia-font h1, body.dyslexia-font h2, body.dyslexia-font h3, body.dyslexia-font h4,
+body.dyslexia-font .brand-name {
+    font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', 'Trebuchet MS', sans-serif;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1.5;
+}

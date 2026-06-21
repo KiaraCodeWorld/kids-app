@@ -12,6 +12,28 @@
         </div>
     </div>
 
+    {% if dash.total_missions == 0 %}
+    <!-- First-time quest guide -->
+    <div class="mi-quest-guide" id="miQuestGuide">
+        <h4>🌟 How quests work</h4>
+        <div class="quest-steps">
+            <div class="q-step">
+                <span class="q-step-num">1</span>
+                <span class="q-step-text">Tap <strong>Start Today's Quest</strong> for 3 quick challenges.</span>
+            </div>
+            <div class="q-step">
+                <span class="q-step-num">2</span>
+                <span class="q-step-text">Use hints if you need them — every mistake is a chance to learn.</span>
+            </div>
+            <div class="q-step">
+                <span class="q-step-num">3</span>
+                <span class="q-step-text">Earn XP, keep your streak, and level up your brain!</span>
+            </div>
+        </div>
+        <button class="q-step-dismiss" id="miDismissGuide">Got it!</button>
+    </div>
+    {% endif %}
+
     <!-- Stats row -->
     <div class="mi-stats">
         <div class="mi-stat">
@@ -110,6 +132,19 @@ if (speciesBox) {
     });
 }
 
+const dismissGuide = document.getElementById('miDismissGuide');
+if (dismissGuide) {
+    dismissGuide.addEventListener('click', () => {
+        const guide = document.getElementById('miQuestGuide');
+        if (guide) {
+            guide.style.transition = 'opacity 0.3s, transform 0.3s';
+            guide.style.opacity = '0';
+            guide.style.transform = 'translateY(-10px)';
+            setTimeout(() => guide.remove(), 300);
+        }
+    });
+}
+
 const saveBuddy = document.getElementById('miSaveBuddy');
 if (saveBuddy) {
     saveBuddy.addEventListener('click', async () => {
@@ -198,6 +233,13 @@ if (saveBuddy) {
 .mi-onboard { margin-top: 1.5rem; background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 10px 24px rgba(15,23,42,0.08); }
 .mi-onboard h4 { margin: 0 0 0.25rem; color: #7c5cff; }
 .mi-onboard p { margin: 0 0 0.75rem; color: #64748b; font-size: 0.9rem; }
+
+.mi-quest-guide { margin-bottom: 1.25rem; background: #fff; border-radius: 1.25rem; padding: 1.25rem; box-shadow: 0 10px 24px rgba(15,23,42,0.08); animation: popIn 0.5s ease-out; }
+.mi-quest-guide h4 { margin: 0 0 0.75rem; color: #7c5cff; }
+.quest-steps { display: flex; flex-direction: column; gap: 0.6rem; margin-bottom: 1rem; }
+.q-step { display: flex; align-items: flex-start; gap: 0.7rem; color: #334155; font-size: 0.95rem; line-height: 1.45; }
+.q-step-num { flex-shrink: 0; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #ede9fe; color: #7c5cff; border-radius: 50%; font-weight: 800; font-size: 0.85rem; }
+.q-step-dismiss { background: #7c5cff; color: white; border: none; border-radius: 0.75rem; padding: 0.6rem 1.2rem; font-weight: 800; cursor: pointer; }
 .mi-species { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 0.85rem; }
 .sp-btn { font-size: 1.6rem; background: #f1f5f9; border: 3px solid transparent; border-radius: 0.9rem; padding: 0.3rem 0.55rem; cursor: pointer; transition: all .2s; }
 .sp-btn:hover { background: #e2e8f0; }

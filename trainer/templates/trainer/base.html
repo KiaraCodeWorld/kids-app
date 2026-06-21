@@ -8,9 +8,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/static/trainer/styles.css?v=20260613-3" />
+    <link rel="stylesheet" href="/static/trainer/styles.css?v=20260613-4" />
 </head>
-<body>
+<body class="{% if shell.reduce_motion %}reduce-motion{% endif %} {% if shell.large_text %}large-text{% endif %} {% if shell.high_contrast %}high-contrast{% endif %} {% if shell.dyslexia_font %}dyslexia-font{% endif %}">
     {% block chrome_top %}
     <!-- ── App header ───────────────────────────────────────── -->
     <header class="app-header">
@@ -40,6 +40,7 @@
                     <div class="dropdown-menu" id="userDropdown">
                       <div class="dm-email">{{ user.email }}</div>
                       <a href="{% url 'trainer:profile_me' %}">📊 My Progress</a>
+                      <a href="{% url 'trainer:comfort_settings' %}">🌈 Comfort Settings</a>
                       <a href="{% url 'trainer:profile_settings' %}">⚙️ Settings</a>
                       <form method="post" action="{% url 'account_logout' %}">
                         {% csrf_token %}
@@ -58,6 +59,8 @@
     <main class="app-main {% block main_class %}{% endblock %}">
         {% block content %}{% endblock %}
     </main>
+
+    {% include 'trainer/includes/break_reminder.html' %}
 
     {% block chrome_bottom %}
     <!-- ── Floating bottom navigation ───────────────────────── -->

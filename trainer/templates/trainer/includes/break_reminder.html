@@ -1,0 +1,119 @@
+<!-- Break reminder: appears after ~10 minutes of continuous practice -->
+<div id="breakReminder" class="break-reminder" role="dialog" aria-modal="true" aria-label="Stretch break" hidden>
+    <div class="break-reminder-backdrop"></div>
+    <div class="break-reminder-card">
+        <div class="break-mascot">🦊</div>
+        <h3>{{ shell.mascot_name|default:"Foxy" }} says: time for a tiny break!</h3>
+        <p>You've been practising for about 10 minutes. Let's stretch and breathe for 30 seconds.</p>
+        <div class="breathing-circle" aria-hidden="true">
+            <span class="breathe-text">breathe</span>
+        </div>
+        <button id="breakResumeBtn" class="button">I'm ready to keep learning 🚀</button>
+    </div>
+</div>
+
+<script>
+(function () {
+    const REMINDER_MS = 10 * 60 * 1000; // 10 minutes
+    const STORAGE_KEY = 'bq_break_dismissed_at';
+    const reminder = document.getElementById('breakReminder');
+    if (!reminder) return;
+
+    // Only run on practice pages (mission, quiz, speed, challenge, spelling, vocab)
+    const path = window.location.pathname;
+    const isPractice = /\/(mission\/play|mental-quiz|speed|math-challenge|spelling|vocabulary|word-explorer|idiom-island)/.test(path);
+    if (!isPractice) return;
+
+    // Don't show more than once per session/hour
+    const lastDismissed = parseInt(sessionStorage.getItem(STORAGE_KEY) || '0', 10);
+    const now = Date.now();
+    if (now - lastDismissed < 60 * 60 * 1000) return;
+
+    let activeStart = now;
+    let totalActive = 0;
+    let timer = null;
+    let shown = false;
+
+    function showReminder() {
+        if (shown) return;
+        shown = true;
+        reminder.hidden = false;
+        document.body.style.overflow = 'hidden';
+    }
+
+    function hideReminder() {
+        reminder.hidden = true;
+        document.body.style.overflow = '';
+        sessionStorage.setItem(STORAGE_KEY, Date.now().toString());
+    }
+
+    function tick() {
+        totalActive += 1000;
+        if (totalActive >= REMINDER_MS) {
+            showReminder();
+            clearInterval(timer);
+        }
+    }
+
+    // Pause timer when tab is hidden
+    function handleVisibility() {
+        if (document.hidden) {
+            totalActive += Date.now() - activeStart;
+            clearInterval(timer);
+        } else {
+            activeStart = Date.now();
+            timer = setInterval(tick, 1000);
+        }
+    }
+
+    timer = setInterval(tick, 1000);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    const resumeBtn = document.getElementById('breakResumeBtn');
+    if (resumeBtn) resumeBtn.addEventListener('click', hideReminder);
+})();
+</script>
+
+<style>
+.break-reminder {
+    position: fixed; inset: 0; z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+}
+.break-reminder[hidden] { display: none; }
+.break-reminder-backdrop {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+}
+.break-reminder-card {
+    position: relative; z-index: 1;
+    max-width: 360px; width: 90%;
+    background: white; border-radius: 1.5rem;
+    padding: 1.75rem; text-align: center;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.25);
+    animation: popIn 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.break-mascot { font-size: 3.5rem; margin-bottom: 0.5rem; }
+.break-reminder-card h3 { margin: 0 0 0.5rem; color: #7c5cff; font-size: 1.3rem; }
+.break-reminder-card p { color: #475569; margin-bottom: 1rem; }
+.breathing-circle {
+    width: 100px; height: 100px; margin: 0 auto 1.25rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #c5b6ff, #9d83ff);
+    display: flex; align-items: center; justify-content: center;
+    animation: breathe 4s ease-in-out infinite;
+}
+.breathe-text { color: white; font-weight: 800; font-size: 0.85rem; }
+
+@keyframes breathe {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.25); opacity: 1; }
+}
+@keyframes popIn {
+    from { opacity: 0; transform: scale(0.85) translateY(20px); }
+    to { opacity: 1; transform: none; }
+}
+
+/* Respect reduce-motion preference */
+body.reduce-motion .breathing-circle {
+    animation: none;
+}
+</style>

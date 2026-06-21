@@ -255,4 +255,8 @@ def player_dashboard(player: PlayerProfile) -> dict:
         "accuracy": player.accuracy(),
         "badges": [BADGE_DEFS[b] for b in (player.badges or []) if b in BADGE_DEFS],
         "grade_level": player.grade_level,
+        "reduce_motion": player.reduce_motion,
+        "large_text": player.large_text,
+        "high_contrast": player.high_contrast,
+        "dyslexia_font": player.dyslexia_font,
     }

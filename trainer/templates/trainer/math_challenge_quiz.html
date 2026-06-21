@@ -114,6 +114,7 @@
 
 <!-- canvas-confetti CDN -->
 <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="/static/trainer/diagnostic_feedback.js"></script>
 
 <script>
 const QUESTIONS = {{ questions_json|safe }};
@@ -153,10 +154,10 @@ const HINT_MSGS = [
   "Hint unlocked! Now give it your best shot! 🗝️",
 ];
 const CORRECT_MSGS = [
-  "Brilliant! You nailed it! 🌟",
+  "You nailed it! Great thinking! 🌟",
   "Excellent work! Keep it up! 🎉",
-  "Perfect! You're on a roll! 🚀",
-  "Amazing! That was clever! 🧠",
+  "Nice! Your strategy worked! 🚀",
+  "Way to stick with it! 🧠",
 ];
 const WRONG_MSGS = [
   "Not quite — let's learn from this! 📚",
@@ -364,7 +365,11 @@ async function submitAnswer() {
 
   if (!isCorrect && data.correct_answer) {
     const box = document.getElementById('correctAnsBox');
-    box.textContent = '✅ Correct answer: ' + data.correct_answer;
+    let diagnostic = '';
+    if (typeof diagnoseMathMistake === 'function') {
+      diagnostic = '\n💡 ' + diagnoseMathMistake(q.question, String(userAnswer), data.correct_answer);
+    }
+    box.textContent = '✅ Correct answer: ' + data.correct_answer + diagnostic;
     box.style.display = 'block';
   }
 
@@ -468,7 +473,7 @@ function showResults() {
 
   const pct = Math.round((score / TOTAL) * 100);
   const emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '💪' : '📚';
-  const msg = pct >= 90 ? 'Outstanding!' : pct >= 70 ? 'Great job!' : pct >= 50 ? 'Good effort!' : 'Keep practising!';
+  const msg = pct >= 90 ? 'Outstanding effort!' : pct >= 70 ? 'Strong work!' : pct >= 50 ? 'Good effort!' : 'Keep practising — you\'re growing!';
   document.getElementById('resultsTrophy').textContent = emoji;
   document.getElementById('resultsTitle').textContent = msg;
   document.getElementById('resultsScore').textContent = `${score} / ${TOTAL} correct (${pct}%)`;

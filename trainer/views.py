@@ -146,7 +146,7 @@ def challenge(request, slug=None):
     if request.method == 'POST':
         user_answer = request.POST.get('answer', '').strip()
         if user_answer == challenge_item['answer']:
-            feedback = 'Great job! You solved it correctly.'
+            feedback = 'Great job! Your strategy worked.'
             feedback_class = 'success'
             explanation = challenge_item['explanation']
         else:
@@ -427,6 +427,20 @@ def api_check_saved_word(request, word):
 
 
 @csrf_exempt
+def api_delete_saved_word(request, word):
+    """Delete a saved vocabulary word."""
+    if request.method not in ('POST', 'DELETE'):
+        return JsonResponse({'error': 'POST or DELETE required'}, status=405)
+    try:
+        deleted, _ = SavedVocabularyWord.objects.filter(word__iexact=word.strip()).delete()
+        if deleted:
+            return JsonResponse({'success': True, 'message': f'"{word}" removed.'})
+        return JsonResponse({'success': False, 'message': 'Word not found.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
+
+
+@csrf_exempt
 def api_get_saved_words(request):
     """Get all saved words as JSON"""
     try:
@@ -498,6 +512,24 @@ def profile_me(request):
         'total_correct': player.total_correct,
         'total_items': player.total_items,
         'longest_streak': player.longest_streak,
+    })
+
+
+def comfort_settings(request):
+    """Accessibility and comfort settings for the current player."""
+    player = mission_service.get_player(request)
+
+    if request.method == 'POST':
+        player.reduce_motion = request.POST.get('reduce_motion') == 'on'
+        player.large_text = request.POST.get('large_text') == 'on'
+        player.high_contrast = request.POST.get('high_contrast') == 'on'
+        player.dyslexia_font = request.POST.get('dyslexia_font') == 'on'
+        player.save(update_fields=['reduce_motion', 'large_text', 'high_contrast', 'dyslexia_font'])
+        messages.success(request, 'Your comfort settings have been saved.')
+        return redirect('trainer:comfort_settings')
+
+    return render(request, 'trainer/comfort_settings.html', {
+        'player': player,
     })
 
 

@@ -136,12 +136,16 @@ function checkAnswer(skipped = false) {
         setTimeout(nextQ, 900);
     } else {
         qCard.classList.add('mq-wrong');
+        let diagnostic = '';
+        if (!skipped && typeof diagnoseMathMistake === 'function') {
+            diagnostic = '<br><small>💡 ' + diagnoseMathMistake(q.question, userRaw, q.answer) + '</small>';
+        }
         feedbackBanner.innerHTML = skipped
             ? `Skipped — answer: <strong>${q.answer}</strong>`
-            : `✗ Incorrect — answer: <strong>${q.answer}</strong>`;
+            : `✗ Incorrect — answer: <strong>${q.answer}</strong>${diagnostic}`;
         feedbackBanner.className = 'mq-feedback mq-fb-wrong';
         feedbackBanner.style.display = 'block';
-        setTimeout(nextQ, 1800);
+        setTimeout(nextQ, 2500);
     }
 }
 
@@ -185,6 +189,7 @@ function showResults() {
 
 startQuestion();
 </script>
+<script src="/static/trainer/diagnostic_feedback.js"></script>
 
 <style>
 .mq-wrapper {

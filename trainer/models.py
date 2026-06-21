@@ -79,6 +79,12 @@ class PlayerProfile(models.Model):
     seen_items = models.JSONField(default=dict, blank=True)      # {uid: 'YYYY-MM-DD'}
     badges = models.JSONField(default=list, blank=True)          # [badge_key, ...]
 
+    # Accessibility & comfort settings
+    reduce_motion = models.BooleanField(default=False)
+    large_text = models.BooleanField(default=False)
+    high_contrast = models.BooleanField(default=False)
+    dyslexia_font = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

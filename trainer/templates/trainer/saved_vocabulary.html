@@ -51,11 +51,34 @@
 </section>
 
 <script>
-function deleteWord(btn) {
+async function deleteWord(btn) {
     const word = btn.dataset.word;
-    if (confirm(`Delete "${word}" from your saved words?`)) {
-        // Refresh page (simple approach)
-        location.reload();
+    if (!confirm(`Delete "${word}" from your saved words?`)) return;
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Removing...';
+
+    try {
+        const response = await fetch(`{% url 'trainer:api_delete_saved_word' word='__WORD__' %}`.replace('__WORD__', encodeURIComponent(word)), {
+            method: 'POST',
+        });
+        const data = await response.json();
+
+        if (data.success) {
+            const card = btn.closest('.saved-word-card');
+            card.style.transition = 'all 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            setTimeout(() => card.remove(), 300);
+        } else {
+            alert(data.message || 'Could not remove word.');
+            btn.disabled = false;
+            btn.textContent = '🗑 Remove';
+        }
+    } catch (error) {
+        alert('Failed to remove word. Please try again.');
+        btn.disabled = false;
+        btn.textContent = '🗑 Remove';
     }
 }
 

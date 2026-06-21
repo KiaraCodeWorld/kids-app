@@ -13,6 +13,7 @@
             <div class="me-xp-fill" style="width: {{ dash.level_percent }}%"></div>
         </div>
         <p class="me-xp-text">{{ dash.xp }} XP · {{ dash.xp_to_next }} to next level</p>
+        <a href="{% url 'trainer:comfort_settings' %}" class="me-settings-link">🌈 Comfort Settings</a>
     </section>
 
     <!-- Key stats -->
@@ -112,6 +113,8 @@
 .me-xp-track { height: 12px; background: rgba(255,255,255,0.28); border-radius: 999px; margin: 0.9rem 0 0.4rem; position: relative; z-index: 1; }
 .me-xp-fill { height: 100%; background: linear-gradient(90deg,#ffd23f,#ff9d5c); border-radius: 999px; transition: width .6s ease; }
 .me-xp-text { margin: 0; font-size: 0.82rem; opacity: 0.95; font-weight: 700; position: relative; z-index: 1; }
+.me-settings-link { display: inline-block; margin-top: 0.75rem; background: rgba(255,255,255,0.25); color: #fff; text-decoration: none; padding: 0.45rem 1rem; border-radius: 999px; font-weight: 800; font-size: 0.85rem; border: 2px solid rgba(255,255,255,0.35); transition: background 0.2s; position: relative; z-index: 1; }
+.me-settings-link:hover { background: rgba(255,255,255,0.4); }
 
 .me-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 0.6rem; margin-bottom: 1.25rem; }
 .me-stat { background: #fff; border-radius: 18px; padding: 0.9rem 0.3rem; text-align: center;

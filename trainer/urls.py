@@ -22,9 +22,11 @@ urlpatterns = [
     path('saved-vocabulary/', views.saved_vocabulary, name='saved_vocabulary'),
     path('api/save-word/', views.api_save_word, name='api_save_word'),
     path('api/check-saved-word/<str:word>/', views.api_check_saved_word, name='api_check_saved_word'),
+    path('api/delete-saved-word/<str:word>/', views.api_delete_saved_word, name='api_delete_saved_word'),
     path('api/get-saved-words/', views.api_get_saved_words, name='api_get_saved_words'),
     # Brain Quest — Daily Mission
     path('me/', views.profile_me, name='profile_me'),
+    path('settings/comfort/', views.comfort_settings, name='comfort_settings'),
     path('mission/', views.mission_home, name='mission_home'),
     path('mission/play/', views.daily_mission, name='daily_mission'),
     path('api/mission/complete/', views.api_mission_complete, name='api_mission_complete'),
