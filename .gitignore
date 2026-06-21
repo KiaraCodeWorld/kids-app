@@ -16,10 +16,10 @@ env/
 *.swo
 *~
 
-# Database files
+# Database files (kept out by default; db.sqlite3 is intentionally tracked for this prototype)
 *.db
-*.sqlite3
 *.sqlite
+!db.sqlite3
 
 # Python
 __pycache__/
