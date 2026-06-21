@@ -1618,7 +1618,11 @@ h1, h2, h3, h4, .brand-name, .pc-hello { font-family: 'Baloo 2', 'Nunito', sans-
     padding: 1.25rem 0 calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 1rem);
 }
 /* Legacy .container shim for un-migrated pages */
-.container { width: 100%; margin: 0 auto; padding: 0; }
+.container { width: 100%; margin: 0 auto; padding: 0 0 calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 1rem) 0; }
+/* Quiz and challenge containers need nav-aware padding */
+.mcq-wrapper, .challenge-wrapper, .quiz-wrapper {
+    padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px) + 1rem) !important;
+}
 
 /* ── Floating bottom navigation ───────────────────────────── */
 .bottom-nav {
@@ -1677,6 +1681,13 @@ h1, h2, h3, h4, .brand-name, .pc-hello { font-family: 'Baloo 2', 'Nunito', sans-
     box-shadow: 0 8px 20px rgba(45,42,69,0.08);
 }
 .button.secondary:hover { background: #f7f5ff; }
+
+/* ── Section spacing fixes ────────────────────────────────– */
+section { margin-bottom: 1.5rem !important; }
+section.benny-section { margin-bottom: 1rem !important; }
+section.explore { margin-bottom: 2rem !important; }
+section.level-card { margin-bottom: 1.5rem !important; }
+section.quest-card { margin-bottom: 1.5rem !important; }
 
 /* ── Cards refreshed ──────────────────────────────────────── */
 .card, .categories, .levels, .challenge-preview, .lesson-card, .challenge-page,
