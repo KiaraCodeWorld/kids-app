@@ -1,6 +1,16 @@
 // PWA Registration and Install Handling
 
 let deferredPrompt;
+const INSTALL_PROMPT_DISMISSED_KEY = 'pwa_install_dismissed_at';
+const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+// Check if install prompt was recently dismissed
+function shouldShowInstallPrompt() {
+  const dismissedAt = localStorage.getItem(INSTALL_PROMPT_DISMISSED_KEY);
+  if (!dismissedAt) return true;
+  const timeSinceDismiss = Date.now() - parseInt(dismissedAt);
+  return timeSinceDismiss > DISMISS_DURATION_MS;
+}
 
 // Register Service Worker
 if ('serviceWorker' in navigator) {
@@ -30,6 +40,19 @@ if ('serviceWorker' in navigator) {
 
 // Handle PWA Install Prompt
 window.addEventListener('beforeinstallprompt', event => {
+  // Don't show on quiz/active task pages
+  if (window.location.pathname.includes('/math-challenge/quiz/') ||
+      window.location.pathname.includes('/challenge/') ||
+      window.location.pathname.includes('/spelling/') ||
+      window.location.pathname.includes('/mental-quiz/')) {
+    return;
+  }
+
+  // Only show if not recently dismissed
+  if (!shouldShowInstallPrompt()) {
+    return;
+  }
+
   event.preventDefault();
   deferredPrompt = event;
 
@@ -59,9 +82,19 @@ function installApp() {
   deferredPrompt.userChoice.then(choiceResult => {
     if (choiceResult.outcome === 'accepted') {
       console.log('User accepted install prompt');
+      localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, Date.now().toString());
+    } else {
+      markInstallPromptDismissed();
     }
     deferredPrompt = null;
+    const installBanner = document.getElementById('install-banner');
+    if (installBanner) installBanner.style.display = 'none';
   });
+}
+
+// Mark install prompt as dismissed
+function markInstallPromptDismissed() {
+  localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, Date.now().toString());
 }
 
 // Check if running as standalone app
