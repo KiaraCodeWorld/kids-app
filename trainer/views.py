@@ -36,6 +36,11 @@ from .math_challenge_content import (
 )
 
 
+def offline(request):
+    """Offline fallback page for PWA"""
+    return render(request, 'trainer/offline.html')
+
+
 def home(request):
     level_groups = [
         {

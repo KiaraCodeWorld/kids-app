@@ -2,9 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=yes" />
     <title>🦊 Brain Quest — Feel Brilliant Before Breakfast</title>
+    <meta name="description" content="Daily 5-minute learning for curious kids (7-10): math, vocabulary, spelling, idioms & more. Fun, interactive, with XP & streaks!" />
     <meta name="theme-color" content="#7c5cff" />
+
+    <!-- PWA Meta Tags -->
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%237c5cff' width='192' height='192' rx='40'/><text x='50%' y='50%' font-size='120' font-family='Arial' dy='.3em' fill='white' text-anchor='middle' dominant-baseline='middle'>🦊</text></svg>" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Brain Quest" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
@@ -87,6 +98,16 @@
 
 <!-- Lottie player web component — use <lottie-player src="/static/trainer/lottie/my.json" autoplay loop style="width:200px"></lottie-player> anywhere -->
 <script src="https://unpkg.com/@lottiefiles/lottie-player@2.0.8/dist/lottie-player.js" defer></script>
+
+<!-- PWA Support -->
+<script src="/static/pwa-init.js" defer></script>
+
+<!-- PWA Install Banner -->
+<div id="install-banner" style="display: none; position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 1rem 1.5rem; border-radius: 1rem; z-index: 9998; box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3); text-align: center; max-width: 90%;">
+    <div style="font-weight: 600; margin-bottom: 0.5rem;">📱 Install Brain Quest?</div>
+    <button onclick="installApp()" style="background: white; color: #7c5cff; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; font-weight: 700; cursor: pointer; margin-right: 0.5rem;">Install</button>
+    <button onclick="this.parentElement.style.display='none'" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 0.5rem; cursor: pointer;">Later</button>
+</div>
 
 <script>
 function toggleDropdown() {

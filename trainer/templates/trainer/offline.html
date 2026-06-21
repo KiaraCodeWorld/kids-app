@@ -1,0 +1,19 @@
+{% extends 'trainer/base.html' %}
+
+{% block main_class %}offline-page{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; padding: 2rem; text-align: center;">
+    <div style="font-size: 5rem; margin-bottom: 1rem;">📡</div>
+    <h1 style="color: #7c5cff; margin: 0 0 1rem;">You're Offline</h1>
+    <p style="color: #666; font-size: 1.1rem; max-width: 500px; margin: 0 0 2rem;">
+        Brain Quest works best online, but we've cached your recent content. Check your connection and try again!
+    </p>
+    <button onclick="location.reload()" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 1rem 2rem; border-radius: 0.8rem; font-size: 1.1rem; font-weight: 700; cursor: pointer; box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);">
+        🔄 Try Again
+    </button>
+    <p style="color: #999; margin-top: 2rem; font-size: 0.9rem;">
+        Available cached content will load automatically
+    </p>
+</div>
+{% endblock %}

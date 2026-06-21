@@ -39,11 +39,12 @@ yarn-debug.log*
 Thumbs.db
 *.log
 
-# Cache and temporary files
+# Cache and temporary files (except PWA manifest)
 .cache/
 *.cache
 .pytest_cache/
 .coverage
+!trainer/static/manifest.json
 
 # Data files
 *.csv
