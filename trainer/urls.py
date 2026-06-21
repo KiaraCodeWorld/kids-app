@@ -5,6 +5,7 @@ app_name = 'trainer'
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('math-tricks/', views.math_tricks, name='math_tricks'),
     path('lesson/<slug:slug>/', views.lesson_detail, name='lesson_detail'),
     path('speed/<slug:slug>/', views.speed_test, name='speed_test'),
     path('challenge/', views.challenge, name='challenge'),

@@ -64,17 +64,44 @@ def home(request):
 
     return render(request, 'trainer/home.html', {
         'levels': LEVELS,
+        'dash': dash,
+    })
+
+
+def math_tricks(request):
+    """Standalone library page for all mental math tricks."""
+    level_groups = [
+        {
+            'level': level,
+            'lessons': get_lessons_by_level(level),
+        }
+        for level in LEVELS
+    ]
+    category_groups = [
+        {
+            'category': category,
+            'lessons': get_lessons_by_category(category),
+        }
+        for category in get_categories()
+    ]
+    age_groups = [
+        {
+            'age_range': age_range,
+            'lessons': get_lessons_by_age(age_range),
+        }
+        for age_range in AGE_RANGES
+    ]
+    return render(request, 'trainer/math_tricks.html', {
         'level_groups': level_groups,
         'category_groups': category_groups,
         'age_groups': age_groups,
-        'dash': dash,
     })
 
 
 def lesson_detail(request, slug):
     lesson = get_lesson(slug)
     if lesson is None:
-        return render(request, 'trainer/home.html', {'levels': LEVELS, 'lessons_by_level': {level: get_lessons_by_level(level) for level in LEVELS}})
+        return redirect('trainer:math_tricks')
 
     feedback = ''
     feedback_class = ''

@@ -168,6 +168,9 @@
         <a class="launch-tile lt-math" href="{% url 'trainer:math_challenge_home' %}">
             <span class="lt-icon">🧮</span><span class="lt-name">Math</span>
         </a>
+        <a class="launch-tile lt-tricks" href="{% url 'trainer:math_tricks' %}">
+            <span class="lt-icon">⚡</span><span class="lt-name">Math Tricks</span>
+        </a>
         <a class="launch-tile lt-mental" href="{% url 'trainer:mental_quiz_home' %}">
             <span class="lt-icon">🧠</span><span class="lt-name">Mental Math</span>
         </a>
@@ -192,54 +195,16 @@
     </div>
 </section>
 
-<!-- ── Math trick library ───────────────────────────────────── -->
+<!-- ── Math trick promo ─────────────────────────────────────── -->
 <section class="categories">
-    <h3>📚 Math Trick Categories</h3>
+    <h3>📚 Math Tactics</h3>
     <div class="category-grid">
-        {% for group in category_groups %}
         <div class="category-card">
-            <span class="category-pill">{{ group.category }}</span>
-            <h4>{{ group.lessons|length }} tricks</h4>
-            <p>Master {{ group.category|lower }} with lightning-fast techniques.</p>
-            {% if group.lessons %}
-            <a class="category-link" href="{% url 'trainer:speed_test' group.lessons.0.slug %}">⚡ Speed Test</a>
-            {% endif %}
+            <span class="category-pill">Mental Math</span>
+            <h4>Lightning-fast tricks</h4>
+            <p>Learn techniques by category, skill level, or age group — then test yourself with speed drills.</p>
+            <a class="category-link" href="{% url 'trainer:math_tricks' %}">🚀 Explore Math Tricks</a>
         </div>
-        {% endfor %}
-    </div>
-</section>
-
-<section class="levels">
-    <h3>🏆 Lessons by Skill Level</h3>
-    <div class="card-grid">
-        {% for group in level_groups %}
-        <div class="card">
-            <h4>{{ group.level }}</h4>
-            <p><strong>{{ group.lessons|length }}</strong> lesson{{ group.lessons|length|pluralize }}</p>
-            <ul>
-                {% for lesson in group.lessons %}
-                <li><a href="{% url 'trainer:lesson_detail' lesson.slug %}">{{ lesson.emoji }} {{ lesson.title }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endfor %}
-    </div>
-</section>
-
-<section class="levels">
-    <h3>🎂 Pick Your Age Group</h3>
-    <div class="card-grid">
-        {% for group in age_groups %}
-        <div class="card">
-            <h4>Age {{ group.age_range }}</h4>
-            <p><strong>{{ group.lessons|length }}</strong> perfect lesson{{ group.lessons|length|pluralize }}</p>
-            <ul>
-                {% for lesson in group.lessons %}
-                <li><a href="{% url 'trainer:lesson_detail' lesson.slug %}">{{ lesson.emoji }} {{ lesson.title }}</a></li>
-                {% endfor %}
-            </ul>
-        </div>
-        {% endfor %}
     </div>
 </section>
 
@@ -311,6 +276,7 @@
 .lt-name { font-size: 0.74rem; font-weight: 800; text-align: center; line-height: 1.1; }
 
 .lt-math .lt-icon     { background: linear-gradient(135deg,#ffb3b3,#ff8e8e); }
+.lt-tricks .lt-icon   { background: linear-gradient(135deg,#ffd79c,#ffb95f); }
 .lt-mental .lt-icon   { background: linear-gradient(135deg,#c5b6ff,#a98cff); }
 .lt-words .lt-icon    { background: linear-gradient(135deg,#9be7df,#5fd0c4); }
 .lt-vocab .lt-icon    { background: linear-gradient(135deg,#a9d4ff,#7bb8ff); }

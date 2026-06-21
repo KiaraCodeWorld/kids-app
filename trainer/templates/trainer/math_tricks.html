@@ -1,0 +1,70 @@
+{% extends 'trainer/base.html' %}
+
+{% block content %}
+
+<!-- ── Page header ────────────────────────────────────────────── -->
+<section class="level-card" style="background: linear-gradient(135deg, #ff8e8e 0%, #ff6b6b 100%);">
+    <div class="level-card-info">
+        <span class="level-eyebrow">Math Tactics</span>
+        <h2 class="level-title">📚 Math Trick Library</h2>
+        <p class="level-sub">Master lightning-fast mental math techniques, one trick at a time.</p>
+    </div>
+    <div class="level-trophy">🧮</div>
+</section>
+
+<!-- ── Math trick library ───────────────────────────────────── -->
+<section class="categories">
+    <h3>📚 Math Trick Categories</h3>
+    <div class="category-grid">
+        {% for group in category_groups %}
+        <div class="category-card">
+            <span class="category-pill">{{ group.category }}</span>
+            <h4>{{ group.lessons|length }} tricks</h4>
+            <p>Master {{ group.category|lower }} with lightning-fast techniques.</p>
+            {% if group.lessons %}
+            <a class="category-link" href="{% url 'trainer:speed_test' group.lessons.0.slug %}">⚡ Speed Test</a>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="levels">
+    <h3>🏆 Lessons by Skill Level</h3>
+    <div class="card-grid">
+        {% for group in level_groups %}
+        <div class="card">
+            <h4>{{ group.level }}</h4>
+            <p><strong>{{ group.lessons|length }}</strong> lesson{{ group.lessons|length|pluralize }}</p>
+            <ul>
+                {% for lesson in group.lessons %}
+                <li><a href="{% url 'trainer:lesson_detail' lesson.slug %}">{{ lesson.emoji }} {{ lesson.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="levels">
+    <h3>🎂 Pick Your Age Group</h3>
+    <div class="card-grid">
+        {% for group in age_groups %}
+        <div class="card">
+            <h4>Age {{ group.age_range }}</h4>
+            <p><strong>{{ group.lessons|length }}</strong> perfect lesson{{ group.lessons|length|pluralize }}</p>
+            <ul>
+                {% for lesson in group.lessons %}
+                <li><a href="{% url 'trainer:lesson_detail' lesson.slug %}">{{ lesson.emoji }} {{ lesson.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+<style>
+.level-card { margin-bottom: 1.1rem; }
+</style>
+
+{% endblock %}
