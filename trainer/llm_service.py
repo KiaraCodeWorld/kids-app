@@ -1,23 +1,49 @@
 import os
 import hashlib
+import json
+import requests
 from django.core.cache import cache
-from openai import OpenAI
 
 class LLMHelper:
     def __init__(self):
-        api_key = os.environ.get('OPENROUTER_API_KEY')
-        if not api_key:
+        self.api_key = os.environ.get('OPENROUTER_API_KEY')
+        if not self.api_key:
             raise ValueError("OPENROUTER_API_KEY not set in environment")
 
-        self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=api_key,
-        )
+        self.base_url = "https://openrouter.ai/api/v1"
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "HTTP-Referer": "http://localhost:8000",
+            "X-OpenRouter-Title": "Brain Quest",
+            "Content-Type": "application/json",
+        }
 
     def _get_cache_key(self, content_type, identifier):
         """Generate cache key for explanations"""
         key_string = f"{content_type}:{identifier}"
         return f"llm_explanation:{hashlib.md5(key_string.encode()).hexdigest()}"
+
+    def _call_api(self, prompt, max_tokens=500):
+        """Call OpenRouter API via requests - uses Gemma 4"""
+        try:
+            response = requests.post(
+                f"{self.base_url}/chat/completions",
+                headers=self.headers,
+                json={
+                    "model": "google/gemma-4-31b-it:free",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "max_tokens": max_tokens,
+                },
+                timeout=15
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                if 'choices' in data and len(data['choices']) > 0:
+                    return data['choices'][0]['message']['content']
+            return None
+        except Exception as e:
+            return None
 
     def explain_spelling_rule(self, word, rule_type):
         """Get explanation for spelling rule with caching"""
@@ -37,20 +63,11 @@ class LLMHelper:
 
 Be concise. No extra commentary."""
 
-        try:
-            response = self.client.chat.completions.create(
-                model="google/gemma-4-31b-it:free",
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=500,
-            )
-
-            explanation = response.choices[0].message.content
-            cache.set(cache_key, explanation, 60 * 60 * 24)  # Cache for 24 hours
+        explanation = self._call_api(prompt, max_tokens=500)
+        if explanation:
+            cache.set(cache_key, explanation, 60 * 60 * 24)
             return explanation
-        except Exception as e:
-            return f"Explanation: {word} follows standard spelling rules. Please check a dictionary for details."
+        return f"Explanation: {word} follows standard spelling rules. Please check a dictionary for details."
 
     def get_spelling_hint(self, word, hint_type='general'):
         """Get hint for spelling a word"""
@@ -70,14 +87,8 @@ Be concise. No extra commentary."""
             hint = hints[hint_type]
         else:
             prompt = f"Give a short, helpful hint for spelling the word '{word}'. Just one sentence."
-            try:
-                response = self.client.chat.completions.create(
-                    model="google/gemma-4-31b-it:free",
-                    messages=[{"role": "user", "content": prompt}],
-                    max_tokens=100,
-                )
-                hint = response.choices[0].message.content
-            except:
+            hint = self._call_api(prompt, max_tokens=100)
+            if not hint:
                 hint = f"Try spelling it syllable by syllable"
 
         cache.set(cache_key, hint, 60 * 60 * 24)
@@ -136,29 +147,16 @@ Be intelligent and treat them as capable thinkers.""",
         }
 
         prompt = prompts.get(tier, prompts['8-10'])
-        try:
-            response = self.client.chat.completions.create(
-                model="google/gemma-4-31b-it:free",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=300,
-            )
-            explanation = response.choices[0].message.content
+        explanation = self._call_api(prompt, max_tokens=300)
+        if explanation:
             cache.set(cache_key, explanation, 60 * 60 * 24)
             return explanation
-        except Exception:
-            return f'"{word}" is a great word to learn! Try using it in a sentence today.'
+        return f'"{word}" is a great word to learn! Try using it in a sentence today.'
 
     def _call_llm(self, prompt, max_tokens=400):
         """Raw LLM call — used by Daily Discovery news and AI-expand."""
-        try:
-            response = self.client.chat.completions.create(
-                model="google/gemma-4-31b-it:free",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=max_tokens,
-            )
-            return response.choices[0].message.content
-        except Exception:
-            return ''
+        result = self._call_api(prompt, max_tokens=max_tokens)
+        return result or ''
 
     def explain_discovery_item(self, title, category, body_excerpt):
         """Expand a Daily Discovery item with deeper AI context for curious kids."""
